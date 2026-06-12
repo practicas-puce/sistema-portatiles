@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTIC Préstamos - Servicios</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="encabezado">
+        <h1>LTIC Préstamos - Servicios</h1>
+    </header>
+
+    <main class="contenedor">
+        <section class="tarjeta" aria-labelledby="titulo-registro">
+            <h2 id="titulo-registro">Registro</h2>
+
+            <form id="formularioRegistro" novalidate>
+                <div class="grupo">
+                    <label for="carrera">Carrera</label>
+                    <input type="text" id="carrera" name="carrera" placeholder="Ej. Ingeniería en Sistemas" autocomplete="organization-title">
+                    <small class="error" id="error-carrera"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="escuela">Escuela</label>
+                    <input type="text" id="escuela" name="escuela" placeholder="Ej. Sistemas">
+                    <small class="error" id="error-escuela"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="facultad">Facultad</label>
+                    <input type="text" id="facultad" name="facultad" placeholder="Ej. Ingeniería">
+                    <small class="error" id="error-facultad"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="tipoId">Tipo ID</label>
+                    <select id="tipoId" name="tipoId">
+                        <option value="">Seleccione una opción</option>
+                        <option value="cedula">Cédula</option>
+                        <option value="pasaporte">Pasaporte</option>
+                    </select>
+                    <small class="error" id="error-tipoId"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="numeroID">Identificación</label>
+                    <input type="text" id="numeroID" name="numeroID" placeholder="17XXXXXXXX" autocomplete="off">
+                    <small class="error" id="error-numeroID"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="nombre">Nombre Completo</label>
+                    <input type="text" id="nombre" name="nombre" placeholder="Nombre..." autocomplete="name">
+                    <small class="error" id="error-nombre"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="celular">Celular</label>
+                    <input type="tel" id="celular" name="celular" placeholder="0999999999" autocomplete="tel">
+                    <small class="error" id="error-celular"></small>
+                </div>
+
+                <div class="grupo">
+                    <label for="correo">Correo Electrónico</label>
+                    <input type="email" id="correo" name="correo" placeholder="ejemplo@correo.com" autocomplete="email">
+                    <small class="error" id="error-correo"></small>
+                </div>
+
+                <button type="submit" class="boton">Guardar</button>
+                <p id="mensaje" class="mensaje" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

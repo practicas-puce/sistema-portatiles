@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de Préstamos y Devoluciones Universitario">
+  <title>Sistema de Préstamos — Universidad</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0d1f3c;
+      --navy-mid: #162d52;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f8f4ed;
+      --white: #ffffff;
+      --gray-light: #eef0f4;
+      --gray-mid: #b0b8c5;
+      --gray-text: #6b7588;
+      --danger: #c0392b;
+      --danger-light: #fdf0ee;
+      --success: #1a7a4a;
+      --success-light: #edf7f1;
+      --warning: #b7780a;
+      --warning-light: #fef8ec;
+      --shadow: 0 4px 24px rgba(13,31,60,0.10);
+      --shadow-lg: 0 8px 40px rgba(13,31,60,0.16);
+      --radius: 12px;
+      --transition: 0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--cream);
+      color: var(--navy);
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(13,31,60,0.22);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-icon {
+      width: 40px; height: 40px;
+      background: var(--gold);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.18rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .header-subtitle {
+      font-size: 0.72rem;
+      color: var(--gray-mid);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .header-date {
+      font-size: 0.82rem;
+      color: var(--gray-mid);
+    }
+
+    /* ─── MAIN LAYOUT ─── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    /* ─── STATS ─── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .stat-card.blue { border-left-color: #3b82f6; }
+    .stat-card.green { border-left-color: var(--success); }
+    .stat-card.red { border-left-color: var(--danger); }
+    .stat-icon { font-size: 2rem; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--navy);
+    }
+    .stat-label { font-size: 0.78rem; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* ─── TABS ─── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 14px 10px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--gray-text);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { background: var(--gray-light); color: var(--navy); }
+    .tab-btn.active {
+      color: var(--navy);
+      font-weight: 600;
+      border-bottom-color: var(--gold);
+      background: var(--cream);
+    }
+
+    /* ─── PANELS ─── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.18rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--gray-light);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ─── FORM ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-text);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 10px 14px;
+      border: 1.5px solid #dde1ea;
+      border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.95rem;
+      color: var(--navy);
+      background: var(--white);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+    }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      padding: 11px 24px;
+      border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: var(--navy);
+      color: var(--white);
+    }
+    .btn-primary:hover { background: var(--navy-mid); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,31,60,0.22); }
+    .btn-gold {
+      background: var(--gold);
+      color: var(--navy);
+    }
+    .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent;
+      color: var(--navy);
+      border: 1.5px solid #dde1ea;
+    }
+    .btn-outline:hover { border-color: var(--navy); background: var(--gray-light); }
+    .btn-danger {
+      background: var(--danger);
+      color: var(--white);
+    }
+    .btn-danger:hover { background: #a93226; }
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 0.82rem;
+    }
+
+    /* ─── TABLE ─── */
+    .table-wrap { overflow-x: auto; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; min-width: 540px; }
+    thead th {
+      background: var(--navy);
+      color: var(--gold-light);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 12px 16px;
+      text-align: left;
+    }
+    tbody tr { border-bottom: 1px solid var(--gray-light); transition: background var(--transition); }
+    tbody tr:hover { background: var(--gray-light); }
+    tbody td { padding: 12px 16px; font-size: 0.92rem; vertical-align: middle; }
+
+    /* ─── BADGES ─── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-active { background: var(--success-light); color: var(--success); }
+    .badge-returned { background: var(--gray-light); color: var(--gray-text); }
+    .badge-overdue { background: var(--danger-light); color: var(--danger); }
+    .badge-pending { background: var(--warning-light); color: var(--warning); }
+    .badge-available { background: var(--success-light); color: var(--success); }
+    .badge-loaned { background: #e8f0fe; color: #1a56db; }
+
+    /* ─── SEARCH BAR ─── */
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .search-bar input, .search-bar select {
+      padding: 9px 14px;
+      border: 1.5px solid #dde1ea;
+      border-radius: 8px;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color var(--transition);
+      flex: 1; min-width: 160px;
+    }
+    .search-bar input:focus, .search-bar select:focus { border-color: var(--gold); }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--gray-text);
+    }
+    .empty-state .icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.95rem; }
+
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--navy);
+      color: var(--white);
+      padding: 13px 24px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      border-left: 4px solid var(--gold);
+      max-width: 90vw;
+      text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { border-left-color: #2ecc71; }
+    #toast.error { border-left-color: var(--danger); }
+
+    /* ─── MODAL ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(13,31,60,0.55);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: 14px;
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 460px;
+      padding: 28px;
+      position: relative;
+      animation: modalIn 0.22s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: var(--navy);
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: var(--gray-light);
+      border: none;
+      border-radius: 50%;
+      width: 30px; height: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gray-text);
+      transition: background var(--transition);
+    }
+    .modal-close:hover { background: #dde1ea; }
+    .modal-detail { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .modal-row { display: flex; justify-content: space-between; font-size: 0.9rem; border-bottom: 1px solid var(--gray-light); padding-bottom: 8px; }
+    .modal-row span:first-child { color: var(--gray-text); font-weight: 600; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 600px) {
+      header { height: auto; padding: 12px 16px; flex-wrap: wrap; gap: 6px; }
+      .container { padding: 20px 12px 48px; }
+      .card { padding: 18px 14px; }
+      .tab-btn { font-size: 0.8rem; padding: 12px 6px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div class="header-icon">🎓</div>
+    <div>
+      <div class="header-title">Sistema de Préstamos</div>
+      <div class="header-subtitle">Gestión Universitaria</div>
+    </div>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('prestamos')">📋 Préstamos</button>
+    <button class="tab-btn" onclick="switchTab('nuevo')">➕ Nuevo Préstamo</button>
+    <button class="tab-btn" onclick="switchTab('devolucion')">↩️ Devolución</button>
+    <button class="tab-btn" onclick="switchTab('inventario')">📦 Inventario</button>
+  </div>
+
+  <!-- PANEL: PRÉSTAMOS -->
+  <div class="panel active" id="panel-prestamos">
+    <div class="card">
+      <div class="card-title">📋 Registro de Préstamos</div>
+      <div class="search-bar">
+        <input type="text" id="searchPrestamos" placeholder="Buscar por estudiante, artículo o ID..." oninput="renderPrestamos()">
+        <select id="filterEstado" onchange="renderPrestamos()">
+          <option value="">Todos los estados</option>
+          <option value="activo">Activo</option>
+          <option value="devuelto">Devuelto</option>
+          <option value="vencido">Vencido</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estudiante</th>
+              <th>Artículo</th>
+              <th>Fecha Préstamo</th>
+              <th>Fecha Devolución</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaPrestamos"></tbody>
+        </table>
+        <div class="empty-state" id="emptyPrestamos" style="display:none">
+          <div class="icon">📭</div>
+          <p>No se encontraron préstamos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: NUEVO PRÉSTAMO -->
+  <div class="panel" id="panel-nuevo">
+    <div class="card">
+      <div class="card-title">➕ Registrar Nuevo Préstamo</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre del Estudiante *</label>
+          <input type="text" id="nEstudiante" placeholder="Ej: María García">
+        </div>
+        <div class="form-group">
+          <label>Cédula / Código Estudiantil *</label>
+          <input type="text" id="nCedula" placeholder="Ej: 1234567890">
+        </div>
+        <div class="form-group">
+          <label>Carrera / Facultad</label>
+          <input type="text" id="nCarrera" placeholder="Ej: Ingeniería de Sistemas">
+        </div>
+        <div class="form-group">
+          <label>Correo Institucional</label>
+          <input type="email" id="nCorreo" placeholder="estudiante@universidad.edu">
+        </div>
+        <div class="form-group">
+          <label>Artículo a Prestar *</label>
+          <select id="nArticulo" onchange="actualizarArticuloInfo()">
+            <option value="">Seleccione un artículo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha de Devolución *</label>
+          <input type="date" id="nFechaDevolucion">
+        </div>
+        <div class="form-group full">
+          <label>Observaciones</label>
+          <textarea id="nObservaciones" rows="2" placeholder="Estado del artículo, notas adicionales..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-gold" onclick="registrarPrestamo()">✅ Registrar Préstamo</button>
+        <button class="btn btn-outline" onclick="limpiarFormulario()">🗑 Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: DEVOLUCIÓN -->
+  <div class="panel" id="panel-devolucion">
+    <div class="card">
+      <div class="card-title">↩️ Registrar Devolución</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Buscar Préstamo Activo</label>
+          <input type="text" id="buscarDevolucion" placeholder="Nombre, cédula o ID del préstamo..." oninput="buscarParaDevolucion()">
+        </div>
+        <div class="form-group">
+          <label>Estado de Devolución</label>
+          <select id="estadoDevolucion">
+            <option value="bueno">Bueno</option>
+            <option value="regular">Regular</option>
+            <option value="danado">Dañado</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Observaciones de Devolución</label>
+          <textarea id="obsDevolucion" rows="2" placeholder="Notas sobre el estado del artículo devuelto..."></textarea>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estudiante</th>
+              <th>Artículo</th>
+              <th>Vence</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaDevolucion"></tbody>
+        </table>
+        <div class="empty-state" id="emptyDevolucion" style="display:none">
+          <div class="icon">🔍</div>
+          <p>No hay préstamos activos que coincidan.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: INVENTARIO -->
+  <div class="panel" id="panel-inventario">
+    <div class="card">
+      <div class="card-title">📦 Inventario de Artículos</div>
+      <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap">
+        <input type="text" id="searchInventario" placeholder="Buscar artículo..." oninput="renderInventario()"
+          style="padding:9px 14px;border:1.5px solid #dde1ea;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:.92rem;flex:1;min-width:160px;outline:none">
+        <button class="btn btn-gold btn-sm" onclick="abrirModalInventario()">➕ Agregar Artículo</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Artículo</th>
+              <th>Categoría</th>
+              <th>Cantidad Total</th>
+              <th>Disponibles</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaInventario"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal('modalDetalle')">✕</button>
+    <div class="modal-title" id="modalDetalleTitulo">Detalle del Préstamo</div>
+    <div class="modal-detail" id="modalDetalleContenido"></div>
+    <div class="form-actions" id="modalDetalleAcciones"></div>
+  </div>
+</div>
+
+<!-- MODAL INVENTARIO -->
+<div class="modal-overlay" id="modalInventario">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal('modalInventario')">✕</button>
+    <div class="modal-title">Agregar Nuevo Artículo</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-group">
+        <label>Nombre del Artículo *</label>
+        <input type="text" id="invNombre" placeholder="Ej: Laptop HP 14">
+      </div>
+      <div class="form-group">
+        <label>Código *</label>
+        <input type="text" id="invCodigo" placeholder="Ej: LAP-001">
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select id="invCategoria">
+          <option>Tecnología</option>
+          <option>Laboratorio</option>
+          <option>Biblioteca</option>
+          <option>Deportes</option>
+          <option>Audiovisual</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cantidad</label>
+        <input type="number" id="invCantidad" min="1" value="1">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:20px">
+      <button class="btn btn-gold" onclick="agregarArticulo()">✅ Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalInventario')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATOS INICIALES ───────────────────────────────────────
+var inventario = [
+  { codigo:'LAP-001', nombre:'Laptop HP 14', categoria:'Tecnología', cantidad:5, prestados:2 },
+  { codigo:'PRO-001', nombre:'Proyector Epson', categoria:'Audiovisual', cantidad:3, prestados:1 },
+  { codigo:'CAL-001', nombre:'Calculadora Científica', categoria:'Laboratorio', cantidad:10, prestados:4 },
+  { codigo:'TRI-001', nombre:'Trípode Fotográfico', categoria:'Audiovisual', cantidad:4, prestados:0 },
+  { codigo:'LIB-001', nombre:'Microscopio Binocular', categoria:'Laboratorio', cantidad:6, prestados:2 },
+  { codigo:'CAM-001', nombre:'Cámara Canon EOS', categoria:'Audiovisual', cantidad:2, prestados:1 },
+];
+
+var prestamos = [
+  { id:'P-001', estudiante:'Ana Martínez', cedula:'0912345678', carrera:'Comunicación', correo:'a.martinez@uni.edu', articulo:'Proyector Epson', codigoArticulo:'PRO-001', fechaPrestamo:'2026-05-28', fechaDevolucion:'2026-06-10', estado:'activo', obs:'' },
+  { id:'P-002', estudiante:'Carlos Vega', cedula:'1712345678', carrera:'Sistemas', correo:'c.vega@uni.edu', articulo:'Laptop HP 14', codigoArticulo:'LAP-001', fechaPrestamo:'2026-06-01', fechaDevolucion:'2026-06-15', estado:'activo', obs:'Batería al 80%' },
+  { id:'P-003', estudiante:'Lucía Torres', cedula:'0756789012', carrera:'Medicina', correo:'l.torres@uni.edu', articulo:'Microscopio Binocular', codigoArticulo:'LIB-001', fechaPrestamo:'2026-05-20', fechaDevolucion:'2026-06-03', estado:'vencido', obs:'' },
+  { id:'P-004', estudiante:'Diego Ramírez', cedula:'1756789012', carrera:'Arquitectura', correo:'d.ramirez@uni.edu', articulo:'Cámara Canon EOS', codigoArticulo:'CAM-001', fechaPrestamo:'2026-05-10', fechaDevolucion:'2026-05-25', estado:'devuelto', obs:'Devuelto en buen estado' },
+  { id:'P-005', estudiante:'Sofía León', cedula:'0812345678', carrera:'Ingeniería Civil', correo:'s.leon@uni.edu', articulo:'Calculadora Científica', codigoArticulo:'CAL-001', fechaPrestamo:'2026-06-05', fechaDevolucion:'2026-06-20', estado:'activo', obs:'' },
+];
+
+var contadorId = 6;
+
+// ─── FECHA HEADER ──────────────────────────────────────────
+(function() {
+  var d = new Date();
+  var opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('headerDate').textContent = d.toLocaleDateString('es-ES', opts);
+})();
+
+// ─── TABS ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('panel-'+tab).classList.add('active');
+  var btns = document.querySelectorAll('.tab-btn');
+  var map = { prestamos:0, nuevo:1, devolucion:2, inventario:3 };
+  btns[map[tab]].classList.add('active');
+  if(tab==='prestamos') renderPrestamos();
+  if(tab==='devolucion') renderDevolucion('');
+  if(tab==='inventario') renderInventario();
+  if(tab==='nuevo') llenarSelectArticulos();
+}
+
+// ─── STATS ────────────────────────────────────────────────
+function renderStats() {
+  var activos = prestamos.filter(function(p){ return p.estado==='activo'; }).length;
+  var vencidos = prestamos.filter(function(p){ return p.estado==='vencido'; }).length;
+  var devueltos = prestamos.filter(function(p){ return p.estado==='devuelto'; }).length;
+  var total = prestamos.length;
+  var html = [
+    '<div class="stat-card"><span class="stat-icon">📋</span><div><div class="stat-num">'+total+'</div><div class="stat-label">Total Préstamos</div></div></div>',
+    '<div class="stat-card blue"><span class="stat-icon">🔵</span><div><div class="stat-num">'+activos+'</div><div class="stat-label">Activos</div></div></div>',
+    '<div class="stat-card red"><span class="stat-icon">⚠️</span><div><div class="stat-num">'+vencidos+'</div><div class="stat-label">Vencidos</div></div></div>',
+    '<div class="stat-card green"><span class="stat-icon">✅</span><div><div class="stat-num">'+devueltos+'</div><div class="stat-label">Devueltos</div></div></div>',
+  ].join('');
+  document.getElementById('statsGrid').innerHTML = html;
+}
+
+// ─── BADGE ────────────────────────────────────────────────
+function badge(estado) {
+  var map = {
+    activo: '<span class="badge badge-active">● Activo</span>',
+    devuelto: '<span class="badge badge-returned">✓ Devuelto</span>',
+    vencido: '<span class="badge badge-overdue">⚠ Vencido</span>',
+    disponible: '<span class="badge badge-available">● Disponible</span>',
+    prestado: '<span class="badge badge-loaned">● Prestado</span>',
+  };
+  return map[estado] || estado;
+}
+
+// ─── RENDER PRÉSTAMOS ─────────────────────────────────────
+function renderPrestamos() {
+  var q = (document.getElementById('searchPrestamos').value||'').toLowerCase();
+  var f = document.getElementById('filterEstado').value;
+  var lista = prestamos.filter(function(p) {
+    var match = !q || p.estudiante.toLowerCase().indexOf(q)>-1 || p.articulo.toLowerCase().indexOf(q)>-1 || p.id.toLowerCase().indexOf(q)>-1 || p.cedula.indexOf(q)>-1;
+    var est = !f || p.estado===f;
+    return match && est;
+  });
+  var tb = document.getElementById('tablaPrestamos');
+  var empty = document.getElementById('emptyPrestamos');
+  if(!lista.length){ tb.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tb.innerHTML = lista.map(function(p){
+    return '<tr>'
+      +'<td><strong>'+p.id+'</strong></td>'
+      +'<td><strong>'+p.estudiante+'</strong><br><small style="color:var(--gray-text)">'+p.cedula+'</small></td>'
+      +'<td>'+p.articulo+'</td>'
+      +'<td>'+formatFecha(p.fechaPrestamo)+'</td>'
+      +'<td>'+formatFecha(p.fechaDevolucion)+'</td>'
+      +'<td>'+badge(p.estado)+'</td>'
+      +'<td><button class="btn btn-outline btn-sm" onclick="verDetalle(\''+p.id+'\')">👁 Ver</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ─── FORMAT FECHA ─────────────────────────────────────────
+function formatFecha(f) {
+  if(!f) return '—';
+  var p = f.split('-');
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+// ─── VER DETALLE ──────────────────────────────────────────
+function verDetalle(id) {
+  var p = prestamos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  document.getElementById('modalDetalleTitulo').textContent = 'Préstamo '+p.id;
+  var rows = [
+    ['Estudiante', p.estudiante],
+    ['Cédula', p.cedula],
+    ['Carrera', p.carrera||'—'],
+    ['Correo', p.correo||'—'],
+    ['Artículo', p.articulo],
+    ['Fecha Préstamo', formatFecha(p.fechaPrestamo)],
+    ['Fecha Devolución', formatFecha(p.fechaDevolucion)],
+    ['Estado', badge(p.estado)],
+    ['Observaciones', p.obs||'—'],
+  ];
+  document.getElementById('modalDetalleContenido').innerHTML = rows.map(function(r){
+    return '<div class="modal-row"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>';
+  }).join('');
+  var acc = '';
+  if(p.estado==='activo'||p.estado==='vencido') {
+    acc = '<button class="btn btn-gold btn-sm" onclick="devolverDesdeDetalle(\''+p.id+'\')">↩ Registrar Devolución</button>';
+  }
+  document.getElementById('modalDetalleAcciones').innerHTML = acc;
+  document.getElementById('modalDetalle').classList.add('open');
+}
+
+function devolverDesdeDetalle(id) {
+  cerrarModal('modalDetalle');
+  switchTab('devolucion');
+  document.getElementById('buscarDevolucion').value = id;
+  buscarParaDevolucion();
+}
+
+// ─── CERRAR MODAL ─────────────────────────────────────────
+function cerrarModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ─── NUEVO PRÉSTAMO ───────────────────────────────────────
+function llenarSelectArticulos() {
+  var sel = document.getElementById('nArticulo');
+  var disponibles = inventario.filter(function(a){ return a.cantidad - a.prestados > 0; });
+  sel.innerHTML = '<option value="">Seleccione un artículo</option>' +
+    disponibles.map(function(a){
+      return '<option value="'+a.codigo+'">'+a.nombre+' ('+a.codigo+') — '+( a.cantidad - a.prestados )+' disp.</option>';
+    }).join('');
+  // Fecha mínima
+  var hoy = new Date();
+  var manana = new Date(hoy); manana.setDate(hoy.getDate()+1);
+  document.getElementById('nFechaDevolucion').min = manana.toISOString().split('T')[0];
+}
+
+function registrarPrestamo() {
+  var est = document.getElementById('nEstudiante').value.trim();
+  var ced = document.getElementById('nCedula').value.trim();
+  var art = document.getElementById('nArticulo').value;
+  var fDev = document.getElementById('nFechaDevolucion').value;
+  if(!est||!ced||!art||!fDev) { showToast('Por favor, completa todos los campos obligatorios.','error'); return; }
+  var artObj = inventario.find(function(a){ return a.codigo===art; });
+  if(!artObj || artObj.cantidad - artObj.prestados < 1) { showToast('El artículo no está disponible.','error'); return; }
+  var hoy = new Date().toISOString().split('T')[0];
+  var id = 'P-'+String(contadorId).padStart(3,'0'); contadorId++;
+  prestamos.push({
+    id: id,
+    estudiante: est,
+    cedula: ced,
+    carrera: document.getElementById('nCarrera').value.trim(),
+    correo: document.getElementById('nCorreo').value.trim(),
+    articulo: artObj.nombre,
+    codigoArticulo: art,
+    fechaPrestamo: hoy,
+    fechaDevolucion: fDev,
+    estado: 'activo',
+    obs: document.getElementById('nObservaciones').value.trim(),
+  });
+  artObj.prestados++;
+  limpiarFormulario();
+  renderStats();
+  showToast('✅ Préstamo '+id+' registrado correctamente.','success');
+  setTimeout(function(){ switchTab('prestamos'); }, 1200);
+}
+
+function limpiarFormulario() {
+  ['nEstudiante','nCedula','nCarrera','nCorreo','nObservaciones'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  document.getElementById('nArticulo').value='';
+  document.getElementById('nFechaDevolucion').value='';
+}
+
+// ─── DEVOLUCIÓN ───────────────────────────────────────────
+function buscarParaDevolucion() {
+  var q = (document.getElementById('buscarDevolucion').value||'').toLowerCase();
+  renderDevolucion(q);
+}
+
+function renderDevolucion(q) {
+  var lista = prestamos.filter(function(p){
+    return (p.estado==='activo'||p.estado==='vencido') &&
+      (!q || p.estudiante.toLowerCase().indexOf(q)>-1 || p.cedula.indexOf(q)>-1 || p.id.toLowerCase().indexOf(q)>-1);
+  });
+  var tb = document.getElementById('tablaDevolucion');
+  var empty = document.getElementById('emptyDevolucion');
+  if(!lista.length){ tb.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tb.innerHTML = lista.map(function(p){
+    return '<tr>'
+      +'<td><strong>'+p.id+'</strong></td>'
+      +'<td>'+p.estudiante+'<br><small style="color:var(--gray-text)">'+p.cedula+'</small></td>'
+      +'<td>'+p.articulo+'</td>'
+      +'<td>'+formatFecha(p.fechaDevolucion)+'</td>'
+      +'<td>'+badge(p.estado)+'</td>'
+      +'<td><button class="btn btn-gold btn-sm" onclick="procesarDevolucion(\''+p.id+'\')">↩ Devolver</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function procesarDevolucion(id) {
+  var p = prestamos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var estadoItem = document.getElementById('estadoDevolucion').value;
+  var obs = document.getElementById('obsDevolucion').value.trim();
+  p.estado = 'devuelto';
+  p.obs = 'Devuelto — '+estadoItem+(obs?': '+obs:'');
+  var artObj = inventario.find(function(a){ return a.codigo===p.codigoArticulo; });
+  if(artObj && artObj.prestados>0) artObj.prestados--;
+  renderStats();
+  buscarParaDevolucion();
+  showToast('↩️ Devolución de '+p.articulo+' registrada.','success');
+}
+
+// ─── INVENTARIO ───────────────────────────────────────────
+function renderInventario() {
+  var q = (document.getElementById('searchInventario').value||'').toLowerCase();
+  var lista = inventario.filter(function(a){
+    return !q || a.nombre.toLowerCase().indexOf(q)>-1 || a.codigo.toLowerCase().indexOf(q)>-1 || a.categoria.toLowerCase().indexOf(q)>-1;
+  });
+  var tb = document.getElementById('tablaInventario');
+  tb.innerHTML = lista.map(function(a){
+    var disp = a.cantidad - a.prestados;
+    var est = disp>0 ? badge('disponible') : badge('prestado');
+    return '<tr>'
+      +'<td><code>'+a.codigo+'</code></td>'
+      +'<td><strong>'+a.nombre+'</strong></td>'
+      +'<td>'+a.categoria+'</td>'
+      +'<td style="text-align:center">'+a.cantidad+'</td>'
+      +'<td style="text-align:center"><strong style="color:'+(disp>0?'var(--success)':'var(--danger)')+'">'+disp+'</strong></td>'
+      +'<td>'+est+'</td>'
+      +'<td><button class="btn btn-danger btn-sm" onclick="eliminarArticulo(\''+a.codigo+'\')">🗑</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function abrirModalInventario() {
+  document.getElementById('invNombre').value='';
+  document.getElementById('invCodigo').value='';
+  document.getElementById('invCantidad').value='1';
+  document.getElementById('modalInventario').classList.add('open');
+}
+
+function agregarArticulo() {
+  var nombre = document.getElementById('invNombre').value.trim();
+  var codigo = document.getElementById('invCodigo').value.trim();
+  var cat = document.getElementById('invCategoria').value;
+  var cant = parseInt(document.getElementById('invCantidad').value)||1;
+  if(!nombre||!codigo){ showToast('Completa nombre y código.','error'); return; }
+  if(inventario.find(function(a){ return a.codigo===codigo; })){ showToast('Ya existe un artículo con ese código.','error'); return; }
+  inventario.push({ codigo:codigo, nombre:nombre, categoria:cat, cantidad:cant, prestados:0 });
+  cerrarModal('modalInventario');
+  renderInventario();
+  showToast('📦 Artículo "'+nombre+'" agregado.','success');
+}
+
+function eliminarArticulo(codigo) {
+  var a = inventario.find(function(x){ return x.codigo===codigo; });
+  if(a && a.prestados>0){ showToast('No se puede eliminar: tiene préstamos activos.','error'); return; }
+  inventario = inventario.filter(function(x){ return x.codigo!==codigo; });
+  renderInventario();
+  showToast('🗑 Artículo eliminado.','success');
+}
+
+// ─── TOAST ────────────────────────────────────────────────
+function showToast(msg, tipo) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = tipo||'';
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ─── CERRAR MODAL AL CLICK FUERA ──────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(function(overlay){
+  overlay.addEventListener('click', function(e){
+    if(e.target===overlay) overlay.classList.remove('open');
+  });
+});
+
+// ─── INIT ─────────────────────────────────────────────────
+renderStats();
+renderPrestamos();
+llenarSelectArticulos();
+</script>
+</body>
+</html>

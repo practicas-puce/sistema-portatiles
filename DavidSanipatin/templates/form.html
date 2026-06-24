@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de Préstamos y Devoluciones Universitario">
+  <title>Sistema de Préstamos — Universidad</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div class="header-icon">🎓</div>
+    <div>
+      <div class="header-title">Sistema de Préstamos</div>
+      <div class="header-subtitle">Gestión Universitaria</div>
+    </div>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<div class="container">
+
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('prestamos')">📋 Préstamos</button>
+    <button class="tab-btn" onclick="switchTab('nuevo')">➕ Nuevo Préstamo</button>
+    <button class="tab-btn" onclick="switchTab('devolucion')">↩️ Devolución</button>
+    <button class="tab-btn" onclick="switchTab('inventario')">📦 Inventario</button>
+  </div>
+
+  <div class="panel active" id="panel-prestamos">
+    <div class="card">
+      <div class="card-title">📋 Registro de Préstamos</div>
+      <div class="search-bar">
+        <input type="text" id="searchPrestamos" placeholder="Buscar por estudiante, artículo o ID..." oninput="renderPrestamos()">
+        <select id="filterEstado" onchange="renderPrestamos()">
+          <option value="">Todos los estados</option>
+          <option value="activo">Activo</option>
+          <option value="devuelto">Devuelto</option>
+          <option value="vencido">Vencido</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estudiante</th>
+              <th>Artículo</th>
+              <th>Fecha Préstamo</th>
+              <th>Fecha Devolución</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaPrestamos"></tbody>
+        </table>
+        <div class="empty-state" id="emptyPrestamos" style="display:none">
+          <div class="icon">📭</div>
+          <p>No se encontraron préstamos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-nuevo">
+    <div class="card">
+      <div class="card-title">➕ Registrar Nuevo Préstamo</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre del Estudiante *</label>
+          <input type="text" id="nEstudiante" placeholder="Ej: María García">
+        </div>
+        <div class="form-group">
+          <label>Cédula / Código Estudiantil *</label>
+          <input type="text" id="nCedula" placeholder="Ej: 1234567890">
+        </div>
+        <div class="form-group">
+          <label>Carrera / Facultad</label>
+          <input type="text" id="nCarrera" placeholder="Ej: Ingeniería de Sistemas">
+        </div>
+        <div class="form-group">
+          <label>Correo Institucional</label>
+          <input type="email" id="nCorreo" placeholder="estudiante@universidad.edu">
+        </div>
+        <div class="form-group">
+          <label>Artículo a Prestar *</label>
+          <select id="nArticulo" onchange="actualizarArticuloInfo()">
+            <option value="">Seleccione un artículo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha de Devolución *</label>
+          <input type="date" id="nFechaDevolucion">
+        </div>
+        <div class="form-group full">
+          <label>Observaciones</label>
+          <textarea id="nObservaciones" rows="2" placeholder="Estado del artículo, notas adicionales..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-gold" onclick="registrarPrestamo()">✅ Registrar Préstamo</button>
+        <button class="btn btn-outline" onclick="limpiarFormulario()">🗑 Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-devolucion">
+    <div class="card">
+      <div class="card-title">↩️ Registrar Devolución</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Buscar Préstamo Activo</label>
+          <input type="text" id="buscarDevolucion" placeholder="Nombre, cédula o ID del préstamo..." oninput="buscarParaDevolucion()">
+        </div>
+        <div class="form-group">
+          <label>Estado de Devolución</label>
+          <select id="estadoDevolucion">
+            <option value="bueno">Bueno</option>
+            <option value="regular">Regular</option>
+            <option value="danado">Dañado</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Observaciones de Devolución</label>
+          <textarea id="obsDevolucion" rows="2" placeholder="Notas sobre el estado del artículo devuelto..."></textarea>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estudiante</th>
+              <th>Artículo</th>
+              <th>Vence</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaDevolucion"></tbody>
+        </table>
+        <div class="empty-state" id="emptyDevolucion" style="display:none">
+          <div class="icon">🔍</div>
+          <p>No hay préstamos activos que coincidan.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-inventario">
+    <div class="card">
+      <div class="card-title">📦 Inventario de Artículos</div>
+      <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap">
+        <input type="text" id="searchInventario" placeholder="Buscar artículo..." oninput="renderInventario()"
+          style="padding:9px 14px;border:1.5px solid #dde1ea;border-radius:8px;font-family:'Source Sans 3',sans-serif;font-size:.92rem;flex:1;min-width:160px;outline:none">
+        <button class="btn btn-gold btn-sm" onclick="abrirModalInventario()">➕ Agregar Artículo</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Artículo</th>
+              <th>Categoría</th>
+              <th>Cantidad Total</th>
+              <th>Disponibles</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaInventario"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal('modalDetalle')">✕</button>
+    <div class="modal-title" id="modalDetalleTitulo">Detalle del Préstamo</div>
+    <div class="modal-detail" id="modalDetalleContenido"></div>
+    <div class="form-actions" id="modalDetalleAcciones"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalInventario">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal('modalInventario')">✕</button>
+    <div class="modal-title">Agregar Nuevo Artículo</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-group">
+        <label>Nombre del Artículo *</label>
+        <input type="text" id="invNombre" placeholder="Ej: Laptop HP 14">
+      </div>
+      <div class="form-group">
+        <label>Código *</label>
+        <input type="text" id="invCodigo" placeholder="Ej: LAP-001">
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select id="invCategoria">
+          <option>Tecnología</option>
+          <option>Laboratorio</option>
+          <option>Biblioteca</option>
+          <option>Deportes</option>
+          <option>Audiovisual</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cantidad</label>
+        <input type="number" id="invCantidad" min="1" value="1">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:20px">
+      <button class="btn btn-gold" onclick="agregarArticulo()">✅ Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalInventario')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="../javascript/app.js"></script>
+</body>
+</html>

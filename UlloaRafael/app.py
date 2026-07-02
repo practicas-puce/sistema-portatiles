@@ -1,19 +1,17 @@
+import os
 from flask import Flask, render_template, request, jsonify
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
+load_dotenv()
+
 # Configuración de la conexión a PostgreSQL
 def get_db_connection():
-    conn = psycopg2.connect(
-        host="localhost",
-        database="sistema-prestamos",
-        user="postgres",
-        password="password",
-        port="5432"
-    )
-    return conn
+    db_url = os.environ.get("DATABASE_URL")
+    return psycopg2.connect(db_url)
 
 # Ruta principal para servir el formulario HTML
 @app.route('/')
@@ -28,55 +26,22 @@ def registro_page():
 def buscar_page():
     return render_template('buscar.html')
 
+@app.route('/prestamo')
+def prestamo_page():
+    return render_template('prestamo.html')
+
 # =========================================================================
 # ENDPOINTS DE LA API (UNIVERSIDAD)
 # =========================================================================
 
-# 1. Obtener todas las facultades
-@app.route('/api/facultades', methods=['GET'])
-def get_facultades():
-    conn = None
-    try:
-        conn = get_db_connection()
-        # RealDictCursor sirve para que los resultados se devuelvan como diccionarios (JSON)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, nombre FROM facultades ORDER BY nombre;")
-        facultades = cur.fetchall()
-        cur.close()
-        return jsonify(facultades)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
-
-# 2. Obtener escuelas filtradas por facultad
-@app.route('/api/escuelas', methods=['GET'])
-def get_escuelas():
-    facultad_id = request.args.get('facultad_id')
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, nombre FROM escuelas WHERE facultad_id = %s ORDER BY nombre;", (facultad_id,))
-        escuelas = cur.fetchall()
-        cur.close()
-        return jsonify(escuelas)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
-
-# 3. Obtener carreras filtradas por escuela
+# Obtener carreras filtradas por escuela
 @app.route('/api/carreras', methods=['GET'])
 def get_carreras():
-    escuela_id = request.args.get('escuela_id')
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, nombre FROM carreras WHERE escuela_id = %s ORDER BY nombre;", (escuela_id,))
+        cur.execute("SELECT id, nombre FROM carreras ORDER BY nombre;")
         carreras = cur.fetchall()
         cur.close()
         return jsonify(carreras)
@@ -90,7 +55,7 @@ def get_carreras():
 # ENDPOINTS DE LA API (USUARIOS)
 # =========================================================================
 
-# 4. Registrar un nuevo usuario en la Base de Datos
+# Registrar un nuevo usuario en la Base de Datos
 @app.route('/api/usuarios', methods=['POST'])
 def add_usuario():
     datos = request.get_json()
@@ -169,4 +134,4 @@ def buscar_usuario():
 
 if __name__ == '__main__':
     # Ejecuta el servidor en modo desarrollo en el puerto 5000
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0' ,port=5000)

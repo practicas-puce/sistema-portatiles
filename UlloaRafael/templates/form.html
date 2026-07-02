@@ -16,6 +16,7 @@
           ></i>LTIC Préstamos -
           Registro</span
         >
+        <a href="/">Página Principal</a>
       </div>
     </header>
 
@@ -30,28 +31,10 @@
 
               <form id="registroForm">
                 <div class="mb-3">
-                  <label for="facultad" class="form-label">Facultad</label>
-                  <select class="form-select" id="facultad" required>
-                    <option value="" selected disabled>
-                      Seleccione una facultad...
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
-                  <label for="escuela" class="form-label">Escuela</label>
-                  <select class="form-select" id="escuela" required disabled>
-                    <option value="" selected disabled>
-                      Primero seleccione una facultad
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
                   <label for="carrera" class="form-label">Carrera</label>
-                  <select class="form-select" id="carrera" required disabled>
-                    <option value="" selected disabled>
-                      Primero seleccione una escuela
+                  <select class="form-select" id="carrera" required>
+                    <option value="">
+                      Seleccione una carrera
                     </option>
                   </select>
                 </div>
@@ -126,65 +109,30 @@
         </div>
       </div>
     </main>
-
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
-        const selectFacultad = document.getElementById("facultad");
-        const selectEscuela = document.getElementById("escuela");
         const selectCarrera = document.getElementById("carrera");
         const form = document.getElementById("registroForm");
 
-        // Cargar Facultades al iniciar la página
+        // 1. Cargar la lista completa de carreras al iniciar la página
         try {
-          const res = await fetch("/api/facultades");
-          const facultades = await res.json();
-          facultades.forEach((f) => {
-            selectFacultad.innerHTML += `<option value="${f.id}">${f.nombre}</option>`;
+          const res = await fetch("/api/carreras");
+          const carreras = await res.json();
+          
+          let opciones = '<option value="" selected disabled>Seleccione una carrera...</option>';
+          carreras.forEach((c) => {
+            opciones += `<option value="${c.id}">${c.nombre}</option>`;
           });
+          selectCarrera.innerHTML = opciones;
         } catch (err) {
-          console.error("Error cargando facultades:", err);
+          console.error("Error al cargar las carreras:", err);
         }
 
-        // Evento al cambiar Facultad
-        selectFacultad.addEventListener("change", async (e) => {
-          const fId = e.target.value;
-          selectEscuela.innerHTML =
-            '<option value="" selected disabled>Seleccione una escuela...</option>';
-          selectCarrera.innerHTML =
-            '<option value="" selected disabled>Primero seleccione una escuela</option>';
-          selectCarrera.disabled = true;
-
-          if (!fId) return;
-          const res = await fetch(`/api/escuelas?facultad_id=${fId}`);
-          const escuelas = await res.json();
-          escuelas.forEach((es) => {
-            selectEscuela.innerHTML += `<option value="${es.id}">${es.nombre}</option>`;
-          });
-          selectEscuela.disabled = false;
-        });
-
-        // Evento al cambiar Escuela
-        selectEscuela.addEventListener("change", async (e) => {
-          const esId = e.target.value;
-          selectCarrera.innerHTML =
-            '<option value="" selected disabled>Seleccione una carrera...</option>';
-
-          if (!esId) return;
-          const res = await fetch(`/api/carreras?escuela_id=${esId}`);
-          const carreras = await res.json();
-          carreras.forEach((c) => {
-            selectCarrera.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
-          });
-          selectCarrera.disabled = false;
-        });
-
-        // Enviar Formulario al Backend
+        // 2. Enviar Formulario al Backend
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
 
-          const contenedorMensaje = document.getElementById(
-            "mensajeNotificacion",
-          );
+          const contenedorMensaje = document.getElementById("mensajeNotificacion");
           contenedorMensaje.innerHTML = "";
 
           const datos = {
@@ -207,29 +155,28 @@
 
             if (response.ok) {
               contenedorMensaje.innerHTML = `
-                        <div class="alert alert-success border-0 shadow-sm" role="alert">
-                        ✅ ¡Registro guardado con éxito!
-                        </div>
-                    `;
-              form.reset();
-              selectEscuela.disabled = true;
-              selectCarrera.disabled = true;
+                <div class="alert alert-success border-0 shadow-sm" role="alert">
+                  ✅ ¡Registro guardado con éxito!
+                </div>
+              `;
+              form.reset(); // Resetea los campos de texto y vuelve el select a su opción por defecto
             } else {
               contenedorMensaje.innerHTML = `
-                        <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                        ❌ Error: ${resultado.error}
-                        </div>
-                    `;
+                <div class="alert alert-danger border-0 shadow-sm" role="alert">
+                  ❌ Error: ${resultado.error}
+                </div>
+              `;
             }
           } catch (error) {
             contenedorMensaje.innerHTML = `
-                    <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                        ❌ Error crítico en la conexión con el servidor.
-                    </div>
-                `;
+              <div class="alert alert-danger border-0 shadow-sm" role="alert">
+                ❌ Error crítico en la conexión con el servidor.
+              </div>
+            `;
           }
         });
       });
     </script>
+    
   </body>
 </html>

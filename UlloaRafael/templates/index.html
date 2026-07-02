@@ -16,22 +16,66 @@
   <body class="bg-dark text-light">
     <header class="navbar navbar-expand-lg navbar-dark bg-black shadow-sm">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1"
-          ></i>LTIC Préstamos</span
-        >
+        <span class="navbar-brand mb-0 h1">LTIC Préstamos</span>
       </div>
     </header>
 
     <main class="container my-5">
       <div class="text-center mb-5">
         <h1 class="display-5 fw-bold text-white">Sistema de Gestión LTIC</h1>
-        <p class="lead text-white">
+        <p class="lead text-secondary">
           Selecciona una de las opciones del menú para empezar a trabajar.
         </p>
       </div>
 
-      <div class="row g-4 justify-content-center">
-        <div class="col-md-5 col-lg-4">
+      <div
+        class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 justify-content-center"
+      >
+        <div class="col">
+          <div
+            class="card h-100 shadow-sm border-secondary bg-light text-black"
+          >
+            <div class="card-body p-4 text-center d-flex flex-column">
+              <div class="fs-1 text-primary mb-3">
+                <i class="bi bi-laptop"></i>
+              </div>
+              <h3 class="card-title h5 mb-2">Préstamo de Equipos</h3>
+              <p
+                class="card-text text-secondary flex-grow-1 d-flex align-items-center justify-content-center fs-6 px-2"
+              >
+                Registra la salida de equipos a un usuario a través de su
+                identificación.
+              </p>
+              <a href="/prestamo" class="btn btn-outline-primary w-100 mt-3"
+                >Ir a Préstamos</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div
+            class="card h-100 shadow-sm border-secondary bg-light text-black"
+          >
+            <div class="card-body p-4 text-center d-flex flex-column">
+              <div class="fs-1 text-success mb-3">
+                <i class="bi bi-arrow-left-right"></i>
+              </div>
+              <h3 class="card-title h5 mb-2">Devoluciones</h3>
+              <p
+                class="card-text text-secondary flex-grow-1 d-flex align-items-center justify-content-center fs-6 px-2"
+              >
+                Gestiona el retorno de los equipos prestados y actualiza el
+                inventario disponible.
+              </p>
+              <a href="/devolucion" class="btn btn-outline-success w-100 mt-3"
+                >Ir a Devoluciones</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
           <div
             class="card h-100 shadow-sm border-secondary bg-light text-black"
           >
@@ -40,9 +84,11 @@
                 <i class="bi bi-person-plus-fill"></i>
               </div>
               <h3 class="card-title h5 mb-2">Registro de Usuarios</h3>
-              <p class="card-text text-secondary small flex-grow-1">
-                Ingresa nuevos estudiantes o personal técnico al sistema
-                vinculando su respectiva facultad y carrera.
+              <p
+                class="card-text text-secondary flex-grow-1 d-flex align-items-center justify-content-center fs-6 px-2"
+              >
+                Ingresa nuevos usuarios al sistema vinculando sus respectivos
+                datos personales.
               </p>
               <a href="/registro" class="btn btn-outline-primary w-100 mt-3"
                 >Ir al Registro</a
@@ -51,7 +97,7 @@
           </div>
         </div>
 
-        <div class="col-md-5 col-lg-4">
+        <div class="col">
           <div
             class="card h-100 shadow-sm border-secondary bg-light text-black"
           >
@@ -60,9 +106,11 @@
                 <i class="bi bi-search"></i>
               </div>
               <h3 class="card-title h5 mb-2">Consulta de Usuarios</h3>
-              <p class="card-text text-secondary small flex-grow-1">
-                Busca y verifica la información de un usuario registrado
-                utilizando su número de cédula o pasaporte.
+              <p
+                class="card-text text-secondary flex-grow-1 d-flex align-items-center justify-content-center fs-6 px-2"
+              >
+                Verifica la información de un usuario registrado utilizando su
+                número de identificación.
               </p>
               <a href="/buscar" class="btn btn-outline-info w-100 mt-3"
                 >Buscar Usuario</a
@@ -73,8 +121,6 @@
       </div>
     </main>
 
-    <footer class="text-center text-secondary fixed-bottom mb-3 small">
-      LTIC 2026
-    </footer>
+    <footer class="text-center text-secondary my-4 small">LTIC 2026</footer>
   </body>
 </html>

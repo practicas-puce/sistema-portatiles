@@ -160,6 +160,10 @@
                 </div>
               `;
               form.reset(); // Resetea los campos de texto y vuelve el select a su opción por defecto
+
+              setTimeout(() => {
+                window.location.href = "/"; // Redirige a la página de inicio después de 2 segundos
+              }, 2000);
             } else {
               contenedorMensaje.innerHTML = `
                 <div class="alert alert-danger border-0 shadow-sm" role="alert">

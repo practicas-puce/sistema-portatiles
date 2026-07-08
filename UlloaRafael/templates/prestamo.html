@@ -26,64 +26,139 @@
     </header>
 
     <main class="container my-5">
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
+      <div class="row g-4 justify-content-center">
+        <div class="col-lg-6">
           <div class="card shadow-sm">
             <div class="card-body p-4">
               <h2 class="card-title text-center mb-4 fs-4 text-secondary">
-                Nuevo Préstamo
+                Datos del Préstamo
               </h2>
 
-              <form id="prestamoForm">
-                <div class="mb-3">
-                  <label for="usuario" class="form-label">Encargado</label>
-                  <select class="form-select" id="usuario" required>
-                    <option value="" selected disabled>
-                      Seleccione el usuario...
-                    </option>
-                  </select>
-                </div>
+              <div class="mb-3">
+                <label for="administrador" class="form-label"
+                  >Encargado (Administrador)</label
+                >
+                <select
+                  class="form-select bg-white text-black border-secondary"
+                  id="administrador"
+                  required
+                >
+                  <option value="" selected disabled>
+                    Seleccione el administrador...
+                  </option>
+                </select>
+              </div>
 
-                <div class="mb-3">
-                  <label for="usuario" class="form-label">Solicitante</label>
-                  <select class="form-select" id="usuario" required>
-                    <option value="" selected disabled>
-                      Seleccione el usuario...
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
-                  <label for="articulo" class="form-label"
-                    >Equipo / Artículo Disponible</label
+              <div class="mb-3">
+                <label class="form-label"
+                  >Buscar Solicitante (Cédula / ID)</label
+                >
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control bg-white text-black border-secondary"
+                    id="searchCedula"
+                    placeholder="17XXXXXXXX"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btnBuscarSolicitante"
                   >
-                  <select class="form-select" id="articulo" required>
-                    <option value="" selected disabled>
-                      Seleccione el equipo...
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mb-4">
-                  <label for="observaciones" class="form-label"
-                    >Observaciones de Entrega</label
-                  >
-                  <textarea
-                    class="form-control"
-                    id="observaciones"
-                    rows="3"
-                    placeholder="Ej: Se entrega con cargador original, rasguño leve en la tapa trasera..."
-                  ></textarea>
-                </div>
-
-                <div id="mensajeNotificacion" class="mb-3"></div>
-
-                <div class="d-grid">
-                  <button type="submit" class="btn btn-primary">
-                    Confirmar Préstamo
+                    <i class="bi bi-search"></i>
                   </button>
                 </div>
-              </form>
+                <div id="solicitanteConfirmado" class="mt-2 d-none">
+                  <div
+                    class="alert alert-info py-2 px-3 mb-0 small border-0 bg-primary bg-opacity-10 text-primary-emphasis fw-medium"
+                  >
+                    <i class="bi bi-person-check-fill"></i> Solicitante:
+                    <strong id="lblNombreSolicitante"></strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="fechaPrevista" class="form-label"
+                  >Fecha de Devolución Prevista</label
+                >
+                <input
+                  type="datetime-local"
+                  class="form-control bg-white text-black border-secondary"
+                  id="fechaPrevista"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="observaciones" class="form-label"
+                  >Observaciones de Entrega</label
+                >
+                <textarea
+                  class="form-control bg-white text-black border-secondary"
+                  id="observaciones"
+                  rows="2"
+                  placeholder="Detalles de entrega..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card shadow-sm d-flex flex-column">
+            <div class="card-body p-4 flex-grow-1">
+              <h2 class="card-title text-center mb-4 fs-4 text-secondary">
+                Resumen de Equipos
+              </h2>
+
+              <div class="mb-4">
+                <label for="articulo" class="form-label"
+                  >Seleccionar Artículo Disponible</label
+                >
+                <div class="input-group">
+                  <select
+                    class="form-select bg-white text-black border-secondary"
+                    id="articulo"
+                  >
+                    <option value="" selected disabled>
+                      Seleccione un equipo...
+                    </option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="btnAñadirAlCarrito"
+                  >
+                    <i class="bi bi-cart-plus"></i> Agregar
+                  </button>
+                </div>
+              </div>
+
+              <label
+                class="form-label d-block border-bottom border-secondary pb-2"
+                >Artículos a prestar:</label
+              >
+              <div id="carritoVacio" class="text-center text-muted py-4 small">
+                El préstamo está vacío.
+              </div>
+              <ul
+                class="list-group list-group-flush bg-transparent"
+                id="listaCarrito"
+              ></ul>
+            </div>
+
+            <div class="card-footer bg-transparent border-0 p-4 pt-0">
+              <div id="mensajeNotificacion" class="mb-3"></div>
+              <button
+                type="button"
+                class="btn btn-success w-100 py-2 fw-bold text-white"
+                id="btnConfirmarPrestamo"
+                disabled
+              >
+                <i class="bi bi-check-circle-fill"></i> Procesar Préstamo
+                Completo
+              </button>
             </div>
           </div>
         </div>
@@ -92,45 +167,190 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
-        const selectUsuario = document.getElementById("usuario");
+        const selectAdmin = document.getElementById("administrador");
         const selectArticulo = document.getElementById("articulo");
-        const form = document.getElementById("prestamoForm");
+        const listaCarrito = document.getElementById("listaCarrito");
+        const carritoVacio = document.getElementById("carritoVacio");
+        const btnConfirmar = document.getElementById("btnConfirmarPrestamo");
         const contenedorMensaje = document.getElementById(
           "mensajeNotificacion",
         );
 
-        // 1. Cargar Usuarios y Artículos Disponibles al iniciar la pantalla
+        let solicitanteId = null;
+        let carrito = [];
+
+        // 1. Cargar Administradores y Artículos Disponibles al iniciar
         try {
-          // Obtener usuarios
           const resUsuarios = await fetch("/api/usuarios/lista");
           const usuarios = await resUsuarios.json();
           usuarios.forEach((u) => {
-            selectUsuario.innerHTML += `<option value="${u.id}">${u.nombre_completo} (${u.numero_id})</option>`;
+            if (u.rol === "administrador") {
+              selectAdmin.innerHTML += `<option value="${u.id}">${u.nombre_completo}</option>`;
+            }
           });
 
-          // Obtener artículos con estado 'disponible'
+          cargarArticulosDisponibles();
+        } catch (err) {
+          console.error("Error al iniciar la interfaz:", err);
+        }
+
+        async function cargarArticulosDisponibles() {
+          selectArticulo.innerHTML =
+            '<option value="" selected disabled>Seleccione un equipo...</option>';
           const resArticulos = await fetch("/api/articulos/disponibles");
           const articulos = await resArticulos.json();
           articulos.forEach((a) => {
-            selectArticulo.innerHTML += `<option value="${a.id}">${a.tipo_articulo} - ${a.modelo} [${a.codigo_activo}]</option>`;
+            selectArticulo.innerHTML += `<option value="${a.id}" data-texto="${a.tipo_articulo} - ${a.modelo} [${a.codigo_activo}]">${a.tipo_articulo} - ${a.modelo} [${a.codigo_activo}]</option>`;
           });
-        } catch (err) {
-          console.error("Error al poblar los selectores:", err);
         }
 
-        // 2. Enviar el Préstamo al Servidor
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
+        // 2. Lógica del Buscador del Solicitante
+        document
+          .getElementById("btnBuscarSolicitante")
+          .addEventListener("click", async () => {
+            const cedula = document.getElementById("searchCedula").value.trim();
+            const divConfirmacion = document.getElementById(
+              "solicitanteConfirmado",
+            );
+            if (!cedula) return;
+
+            try {
+              const res = await fetch(
+                `/api/usuarios/buscar?numero_id=${cedula}`,
+              );
+              const usuario = await res.json();
+
+              if (res.ok) {
+                solicitanteId = usuario.id;
+                document.getElementById("lblNombreSolicitante").textContent =
+                  usuario.nombre_completo;
+                divConfirmacion.classList.remove("d-none");
+                verificarFormularioValido();
+              } else {
+                solicitanteId = null;
+                divConfirmacion.classList.add("d-none");
+                alert("❌ " + (usuario.error || "Usuario no encontrado."));
+              }
+            } catch (err) {
+              alert("Error al conectar con el servidor.");
+            }
+          });
+
+        // 3. Agregar Elementos al Carrito
+        document
+          .getElementById("btnAñadirAlCarrito")
+          .addEventListener("click", () => {
+            const id = selectArticulo.value;
+            if (!id) return;
+
+            if (carrito.some((item) => item.id === id)) {
+              alert("Este artículo ya está en el carrito.");
+              return;
+            }
+
+            const opcionSeleccionada =
+              selectArticulo.options[selectArticulo.selectedIndex];
+            const texto = opcionSeleccionada.getAttribute("data-texto");
+
+            carrito.push({ id: parseInt(id), texto: texto });
+            opcionSeleccionada.remove();
+
+            renderizarCarrito();
+          });
+
+        // 4. Eliminar Elementos del Carrito
+        window.removerDelCarrito = (id) => {
+          carrito = carrito.filter((item) => item.id !== id);
+          renderizarCarrito();
+          cargarArticulosDisponibles();
+        };
+
+        function renderizarCarrito() {
+          listaCarrito.innerHTML = "";
+          if (carrito.length === 0) {
+            carritoVacio.classList.remove("d-none");
+          } else {
+            carritoVacio.classList.add("d-none");
+            carrito.forEach((item) => {
+              // El elemento del carrito se renderiza como una pequeña pastilla oscura para no sobrecargar el fondo de la tarjeta
+              listaCarrito.innerHTML += `
+                <li class="list-group-item bg-dark border-secondary text-white d-flex justify-content-between align-items-center mb-2 rounded p-2">
+                  <span class="small"><i class="bi bi-laptop text-primary me-2"></i>${item.texto}</span>
+                  <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removerDelCarrito(${item.id})">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </li>
+              `;
+            });
+          }
+          verificarFormularioValido();
+        }
+
+        function verificarFormularioValido() {
+          const adminOk = selectAdmin.value ? true : false;
+          const solicitanteOk = solicitanteId ? true : false;
+          const carritoOk = carrito.length > 0;
+          const fechaOk = document.getElementById("fechaPrevista").value
+            ? true
+            : false;
+
+          // Esto imprimirá en la consola F12 de tu navegador qué campo falta por completarse
+          console.log("=== Estado de Validación ===");
+          console.log(
+            "1. Administrador seleccionado:",
+            adminOk,
+            "-> Valor:",
+            selectAdmin.value,
+          );
+          console.log(
+            "2. Solicitante verificado:",
+            solicitanteOk,
+            "-> ID:",
+            solicitanteId,
+          );
+          console.log(
+            "3. Carrito con artículos:",
+            carritoOk,
+            "-> Cantidad:",
+            carrito.length,
+          );
+          console.log(
+            "4. Fecha ingresada:",
+            fechaOk,
+            "-> Valor:",
+            document.getElementById("fechaPrevista").value,
+          );
+
+          // FORZADO TEMPORAL: Cambia esto a false para obligar al botón a prenderse si quieres probar el envío directo
+          btnConfirmar.disabled = !(
+            solicitanteId &&
+            carrito.length > 0 &&
+            selectAdmin.value &&
+            document.getElementById("fechaPrevista").value
+          );
+        }
+
+        selectAdmin.addEventListener("change", verificarFormularioValido);
+        document
+          .getElementById("fechaPrevista")
+          .addEventListener("input", verificarFormularioValido);
+
+        // 5. Procesar Préstamo Completo
+        // 5. Procesar Préstamo Completo
+        btnConfirmar.addEventListener("click", async () => {
+          btnConfirmar.disabled = true;
           contenedorMensaje.innerHTML = "";
 
+          // CORREGIDO: Sintaxis limpia de JavaScript sin declaraciones de tipo inválidas
           const datos = {
-            usuario_id: parseInt(selectUsuario.value),
-            articulo_id: parseInt(selectArticulo.value),
-            fecha_devolucion_estimada:
-              document.getElementById("fechaEstimada").value,
+            usuario_id: parseInt(solicitanteId),
+            administrador_id: parseInt(selectAdmin.value),
+            fecha_devolucion_prevista:
+              document.getElementById("fechaPrevista").value,
             observaciones: document
               .getElementById("observaciones")
               .value.trim(),
+            articulos: carrito.map((item) => parseInt(item.id)),
           };
 
           try {
@@ -143,31 +363,17 @@
             const resultado = await response.json();
 
             if (response.ok) {
-              contenedorMensaje.innerHTML = `
-                <div class="alert alert-success border-0 shadow-sm" role="alert">
-                  ✅ ¡Préstamo registrado con éxito! El estado del equipo pasó a 'prestado'.
-                </div>
-              `;
-              form.reset();
-
-              // Removemos la opción del artículo prestado del select para que no se duplique
-              const opcionRemover = selectArticulo.querySelector(
-                `option[value="${datos.articulo_id}"]`,
-              );
-              if (opcionRemover) opcionRemover.remove();
+              contenedorMensaje.innerHTML = `<div class="alert alert-success border-0 shadow-sm">✅ Préstamo guardado. Redirigiendo...</div>`;
+              setTimeout(() => {
+                window.location.href = "/";
+              }, 2500);
             } else {
-              contenedorMensaje.innerHTML = `
-                <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                  ❌ Error: ${resultado.error}
-                </div>
-              `;
+              btnConfirmar.disabled = false;
+              contenedorMensaje.innerHTML = `<div class="alert alert-danger border-0 shadow-sm">❌ Error: ${resultado.error}</div>`;
             }
           } catch (error) {
-            contenedorMensaje.innerHTML = `
-              <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                ❌ Error crítico de comunicación con el servidor.
-              </div>
-            `;
+            btnConfirmar.disabled = false;
+            contenedorMensaje.innerHTML = `<div class="alert alert-danger border-0 shadow-sm">❌ Error crítico en el servidor.</div>`;
           }
         });
       });

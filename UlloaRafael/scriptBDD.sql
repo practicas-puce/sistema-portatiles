@@ -163,11 +163,9 @@ EXECUTE FUNCTION tg_auditar_prestamos();
 -- 6. DATA INICIAL DE PRUEBA
 -- =========================================================================
 INSERT INTO carreras (nombre) VALUES ('Desarrollo de Software'), ('Ciencia de Datos');
-
--- Insertamos un Admin y un Alumno (Ojo: tipo_id ahora va sin tildes 'cedula')
 INSERT INTO usuarios (tipo_id, numero_id, nombre_completo, celular, correo, rol, carrera_id) VALUES 
-('cedula', '1711111111', 'Admin Principal LTIC', '0999999991', 'admin.ltic@uce.edu.ec', 'administrador', NULL),
-('cedula', '1722222222', 'Juan Perez Alumno', '0999999992', 'juan.perez@uce.edu.ec', 'comun', 1);
+('cedula', '1711111111', 'Admin Principal LTIC', '0999999991', 'admin.ltic@puce.edu.ec', 'administrador', NULL),
+('cedula', '1722222222', 'Juan Perez Alumno', '0999999992', 'juan.perez@puce.edu.ec', 'comun', 1);
 
 INSERT INTO articulos (codigo_activo, modelo, tipo_articulo) VALUES 
 ('LP-001', 'ASUS TUF A15', 'Laptop'),

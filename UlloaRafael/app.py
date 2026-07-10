@@ -41,6 +41,10 @@ def prestamo_page():
 def devolucion_page():
     return render_template('devolucion.html')
 
+@app.route('/inventario')
+def inventario_page():
+    return render_template('inventario.html')
+
 # =========================================================================
 # ENDPOINTS DE LA API
 # =========================================================================
@@ -55,6 +59,21 @@ def get_carreras():
         carreras = cur.fetchall()
         cur.close()
         return jsonify(carreras)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route('/api/inventario', methods=['GET'])
+def get_inventario():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT tipo_articulo, modelo, unidades_disponibles, unidades_prestadas, total_inventario FROM vista_disponibilidad_stock ORDER BY tipo_articulo, modelo;")
+        inventario = cur.fetchall()
+        cur.close()
+        return jsonify({"inventario": inventario}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:

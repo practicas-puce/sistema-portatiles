@@ -221,15 +221,24 @@ def delete_articulos():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # Eliminar hasta `cantidad` artículos disponibles del modelo/tipo
+        # Realizar borrado lógico de hasta `cantidad` artículos disponibles
         cur.execute(
-            "DELETE FROM articulos WHERE id IN (SELECT id FROM articulos WHERE tipo_articulo = %s AND modelo = %s AND estado = 'disponible' AND activo = TRUE LIMIT %s) RETURNING id;",
+            """
+            UPDATE articulos 
+            SET activo = FALSE 
+            WHERE id IN (
+                SELECT id 
+                FROM articulos 
+                WHERE tipo_articulo = %s AND modelo = %s AND estado = 'disponible' AND activo = TRUE 
+                LIMIT %s
+            ) RETURNING id;
+            """,
             (tipo, modelo, cantidad)
         )
         deleted = len(cur.fetchall())
         conn.commit()
         cur.close()
-        return jsonify({"message": f"Se eliminaron {deleted} artículos."}), 200
+        return jsonify({"message": f"Se eliminaron {deleted} artículos de forma lógica."}), 200
     except Exception as e:
         if conn: conn.rollback()
         return jsonify({"error": str(e)}), 500
@@ -424,7 +433,7 @@ def get_prestamos_activos():
             INNER JOIN usuarios u ON p.usuario_id = u.id
             INNER JOIN detalles_prestamos dp ON p.id = dp.prestamo_id
             INNER JOIN articulos a ON dp.articulo_id = a.id
-            WHERE u.numero_id = %s AND p.estado_op = 'activo';
+            WHERE u.numero_id = %s AND p.estado_op = 'activo' AND a.estado = 'prestado';
         """
         cur.execute(query, (numero_id,))
         prestamos = cur.fetchall()
@@ -446,15 +455,25 @@ def finalizar_prestamo():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. Marcar la cabecera del préstamo como devuelta con su regla de coherencia
-        cur.execute("""
-            UPDATE prestamos 
-            SET fecha_devolucion_real = CURRENT_TIMESTAMP, estado_op = 'devuelto' 
-            WHERE id = %s;
-        """, (prestamo_id,))
-        
-        # 2. Liberar el estado del artículo individual seleccionado en el carrito
+        # 1. Liberar el estado del artículo individual seleccionado
         cur.execute("UPDATE articulos SET estado = 'disponible' WHERE id = %s;", (articulo_id,))
+        
+        # 2. Verificar si quedan artículos en estado 'prestado' asociados a este préstamo
+        cur.execute("""
+            SELECT COUNT(*) 
+            FROM detalles_prestamos dp
+            INNER JOIN articulos a ON dp.articulo_id = a.id
+            WHERE dp.prestamo_id = %s AND a.estado = 'prestado';
+        """, (prestamo_id,))
+        articulos_pendientes = cur.fetchone()[0]
+        
+        # 3. Solo si no quedan más artículos pendientes en este préstamo, se marca la cabecera como devuelta
+        if articulos_pendientes == 0:
+            cur.execute("""
+                UPDATE prestamos 
+                SET fecha_devolucion_real = CURRENT_TIMESTAMP, estado_op = 'devuelto' 
+                WHERE id = %s;
+            """, (prestamo_id,))
         
         conn.commit()
         cur.close()

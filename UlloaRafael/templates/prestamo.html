@@ -35,7 +35,9 @@
               </h2>
 
               <div class="mb-3">
-                <label for="administrador" class="form-label">Encargado</label>
+                <label for="administrador" class="form-label fw-semibold"
+                  >Encargado</label
+                >
                 <select
                   class="form-select bg-white text-black border-secondary"
                   id="administrador"
@@ -48,7 +50,7 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label"
+                <label class="form-label fw-semibold"
                   >Buscar Solicitante (Cédula / ID)</label
                 >
                 <div class="input-group">
@@ -78,7 +80,7 @@
               </div>
 
               <div class="mb-3">
-                <label for="observaciones" class="form-label"
+                <label for="observaciones" class="form-label fw-semibold"
                   >Observaciones de Entrega</label
                 >
                 <textarea
@@ -100,7 +102,7 @@
               </h2>
 
               <div class="mb-4">
-                <label for="articulo" class="form-label"
+                <label for="articulo" class="form-label fw-semibold"
                   >Seleccionar Artículo Disponible</label
                 >
                 <div class="input-group">
@@ -123,7 +125,7 @@
               </div>
 
               <label
-                class="form-label d-block border-bottom border-secondary pb-2"
+                class="form-label fw-semibold d-block border-bottom border-secondary pb-2"
                 >Artículos a prestar:</label
               >
               <div id="carritoVacio" class="text-center text-muted py-4 small">
@@ -162,7 +164,6 @@
         const contenedorMensaje = document.getElementById(
           "mensajeNotificacion",
         );
-
 
         let solicitanteId = null;
         let carrito = [];

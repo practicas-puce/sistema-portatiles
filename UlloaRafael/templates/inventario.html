@@ -17,6 +17,20 @@
         font-size: 0.95rem;
         margin-bottom: 0;
       }
+      #modalEditarArticulo .form-label {
+        color: #000000 !important;
+      }
+      #contenedorAgregar .form-label {
+        color: #000000 !important;
+      }
+      #contenedorAgregar .form-control {
+        color: #000000 !important;
+      }
+
+      #contenedorAgregar .form-control::placeholder {
+        color: #6c757d !important;
+        opacity: 1;
+      }
       .badge-stock {
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
@@ -29,7 +43,7 @@
         cursor: pointer;
       }
       .editable-row:hover {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(0, 0, 0, 0.05);
       }
       .form-control::placeholder {
         color: #ffffff !important;
@@ -72,6 +86,7 @@
         </div>
       </div>
 
+      <!-- NAVEGACIÓN POR PESTAÑAS -->
       <ul class="nav nav-tabs nav-dark mb-4" role="tablist">
         <li class="nav-item" role="presentation">
           <button
@@ -108,6 +123,7 @@
         </li>
       </ul>
 
+      <!-- SPINNER GLOBAL DE CARGA -->
       <div id="loadingSpinner" class="loading text-center my-5">
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Cargando...</span>
@@ -115,12 +131,111 @@
         <p class="text-secondary mt-3">Cargando inventario...</p>
       </div>
 
-      <div
-        class="card shadow-lg bg-white text-dark border-0 rounded-3 overflow-hidden"
-      >
-        <div id="tablaInventarioContenedor"></div>
+      <!-- CONTENEDORES DE CONTENIDO (TAB CONTENT) -->
+      <div class="tab-content">
+        <!-- PESTAÑA 1: VISTA DETALLADA -->
+        <div
+          class="tab-pane fade show active"
+          id="contenedorDetallado"
+          role="tabpanel"
+        >
+          <div
+            class="card shadow-lg bg-white text-dark border-0 rounded-3 overflow-hidden"
+          >
+            <div id="tablaInventarioContenedor"></div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 2: RESUMEN STOCK -->
+        <div class="tab-pane fade" id="contenedorResumen" role="tabpanel">
+          <div
+            class="card shadow-lg bg-white text-dark border-0 rounded-3 overflow-hidden p-4"
+          >
+            <h4 class="fw-bold mb-3 text-dark">
+              <i class="bi bi-pie-chart text-primary"></i> Disponibilidad de
+              Stock Global
+            </h4>
+            <div id="tablaResumenContenedor"></div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 3: AGREGAR EQUIPOS -->
+        <div class="tab-pane fade" id="contenedorAgregar" role="tabpanel">
+          <div
+            class="card shadow-lg bg-white text-dark border-0 rounded-3 overflow-hidden p-4"
+          >
+            <h4 class="fw-bold mb-4 text-dark">
+              <i class="bi bi-plus-circle text-success"></i> Registrar Nuevos
+              Equipos
+            </h4>
+
+            <!-- Alertas internas del formulario de agregar -->
+            <div
+              id="mensajeAgregarExito"
+              class="alert alert-success d-none"
+              role="alert"
+            >
+              <i class="bi bi-check-circle-fill"></i>
+              <span id="textoAgregarExito"></span>
+            </div>
+            <div
+              id="mensajeAgregarError"
+              class="alert alert-danger d-none"
+              role="alert"
+            >
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span id="textoAgregarError"></span>
+            </div>
+
+            <form id="formAgregarEquipo">
+              <div class="mb-3">
+                <label for="tipoAgregar" class="form-label text-dark fw-bold"
+                  >Tipo de Artículo:</label
+                >
+                <input
+                  type="text"
+                  class="form-control bg-light text-dark border-secondary-subtle"
+                  id="tipoAgregar"
+                  placeholder="Ej. Laptop, Proyector, Mouse"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="modeloAgregar" class="form-label text-dark fw-bold"
+                  >Modelo / Descripción:</label
+                >
+                <input
+                  type="text"
+                  class="form-control bg-light text-dark border-secondary-subtle"
+                  id="modeloAgregar"
+                  placeholder="Ej. Lenovo Thinkpad"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label
+                  for="cantidadAgregar"
+                  class="form-label text-dark fw-bold"
+                  >Cantidad de Unidades a ingresar:</label
+                >
+                <input
+                  type="number"
+                  class="form-control bg-light text-dark border-secondary-subtle"
+                  id="cantidadAgregar"
+                  value="1"
+                  min="1"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-success fw-bold px-4 mt-2">
+                <i class="bi bi-save"></i> Generar Stock de Equipos
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
 
+      <!-- MENSAJES DE NOTIFICACIÓN DE OPERACIONES -->
       <div
         id="mensajeError"
         class="alert alert-danger d-none mt-3"
@@ -135,9 +250,17 @@
         inventario.
       </div>
 
-      <div id="mensajeExito" class="alert alert-success d-none mt-4 alert-dismissible fade show" role="alert">
+      <div
+        id="mensajeExito"
+        class="alert alert-success d-none mt-4 alert-dismissible fade show"
+        role="alert"
+      >
         <i class="bi bi-check-circle"></i> <span id="textoExito"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
       </div>
     </main>
 
@@ -150,55 +273,71 @@
       aria-hidden="true"
     >
       <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-          <div class="modal-header border-secondary">
-            <h5 class="modal-title" id="modalLabel">Editar Artículo</h5>
+        <div class="modal-content bg-light text-dark shadow-lg border-0">
+          <div class="modal-header border-bottom border-secondary-subtle">
+            <h5 class="modal-title fw-bold text-dark" id="modalLabel">
+              <i class="bi bi-pencil-square text-primary"></i> Editar Artículo
+            </h5>
             <button
               type="button"
-              class="btn-close btn-close-white"
+              class="btn-close"
               data-bs-dismiss="modal"
               aria-label="Close"
             ></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body text-dark">
             <form id="formEditarArticulo">
               <input type="hidden" id="articuloId" />
 
               <div class="mb-3">
-                <label for="codigoActivo" class="form-label">Código Activo</label>
+                <label
+                  for="codigoActivo"
+                  class="form-label fw-semibold text-dark"
+                  >Código Activo</label
+                >
                 <input
                   type="text"
-                  class="form-control"
+                  class="form-control bg-white text-dark border-secondary-subtle"
                   id="codigoActivo"
                   required
                 />
               </div>
 
               <div class="mb-3">
-                <label for="tipoArticulo" class="form-label"
+                <label
+                  for="tipoArticulo"
+                  class="form-label fw-semibold text-dark"
                   >Tipo de Artículo</label
                 >
                 <input
                   type="text"
-                  class="form-control"
+                  class="form-control bg-white text-dark border-secondary-subtle"
                   id="tipoArticulo"
                   required
                 />
               </div>
 
               <div class="mb-3">
-                <label for="modelo" class="form-label">Modelo</label>
+                <label for="modelo" class="form-label fw-semibold text-dark"
+                  >Modelo</label
+                >
                 <input
                   type="text"
-                  class="form-control"
+                  class="form-control bg-white text-dark border-secondary-subtle"
                   id="modelo"
                   required
                 />
               </div>
 
               <div class="mb-3">
-                <label for="estado" class="form-label">Estado</label>
-                <select class="form-select" id="estado" required>
+                <label for="estado" class="form-label fw-semibold text-dark"
+                  >Estado</label
+                >
+                <select
+                  class="form-select bg-white text-dark border-secondary-subtle"
+                  id="estado"
+                  required
+                >
                   <option value="disponible">Disponible</option>
                   <option value="prestado">Prestado</option>
                   <option value="mantenimiento">Mantenimiento</option>
@@ -206,7 +345,7 @@
               </div>
             </form>
           </div>
-          <div class="modal-footer border-secondary">
+          <div class="modal-footer border-top border-secondary-subtle">
             <button
               type="button"
               class="btn btn-secondary"
@@ -216,7 +355,7 @@
             </button>
             <button
               type="button"
-              class="btn btn-primary"
+              class="btn btn-primary fw-semibold"
               id="btnGuardar"
               onclick="guardarArticulo()"
             >
@@ -240,7 +379,7 @@
         cargarInventarioDetallado();
         cargarInventarioResumen();
 
-        // Agregar evento al formulario de agregar equipos
+        // Agregar evento de envío al formulario de agregar equipos
         const formAgregar = document.getElementById("formAgregarEquipo");
         if (formAgregar) {
           formAgregar.addEventListener("submit", async (e) => {
@@ -250,10 +389,11 @@
         }
       });
 
+      // 1. CARGAR VISTA DETALLADA DE ARTÍCULOS INDIVIDUALES
       async function cargarInventarioDetallado() {
         const loadingSpinner = document.getElementById("loadingSpinner");
         const tablaContenedor = document.getElementById(
-          "tablaDetalladaContenedor",
+          "tablaInventarioContenedor",
         );
         const mensajeError = document.getElementById("mensajeError");
         const mensajeVacio = document.getElementById("mensajeVacio");
@@ -278,54 +418,37 @@
             return;
           }
 
+          // Guardar en el arreglo global para el modal de edición
+          articulosData = datos.articulos;
+
           // Construir tabla clara de alto impacto
           let html = '<div class="table-responsive">';
           html +=
             '<table class="table table-striped table-hover table-bordered align-middle inventory-table">';
           html += `
-            <thead class="table-success border-success">
+            <thead class="table-primary text-dark fw-bold">
               <tr>
+                <th class="py-3 ps-3">Código Activo</th>
                 <th class="py-3">Tipo de Artículo</th>
                 <th class="py-3">Modelo</th>
-                <th class="text-center py-3">Disponibles</th>
-                <th class="text-center py-3">Prestados</th>
-                <th class="text-center py-3">Total</th>
+                <th class="text-center py-3">Estado</th>
+                <th class="text-center py-3">Acción</th>
               </tr>
             </thead>
             <tbody>
           `;
 
-          datos.inventario.forEach((item) => {
-            const porcentajeDisponible = (
-              (item.unidades_disponibles / item.total_inventario) *
-              100
-            ).toFixed(0);
-
-            // Badges limpios sobre celdas claras
-            let badgeDisponible = "bg-success text-white";
-            if (porcentajeDisponible < 50)
-              badgeDisponible = "bg-warning text-dark";
-            if (porcentajeDisponible < 20)
-              badgeDisponible = "bg-danger text-white";
-
+          datos.articulos.forEach((item) => {
             html += `
-              <tr>
-                <td class="ps-3"><span class="badge bg-primary text-white fw-semibold">${item.tipo_articulo}</span></td>
+              <tr class="editable-row">
+                <td class="ps-3 fw-bold text-primary">${item.codigo_activo}</td>
+                <td><span class="badge bg-secondary bg-opacity-25 text-dark fw-semibold">${item.tipo_articulo}</span></td>
                 <td class="fw-medium text-dark">${item.modelo}</td>
+                <td class="text-center">${getEstadoBadge(item.estado)}</td>
                 <td class="text-center">
-                  <span class="badge badge-stock ${badgeDisponible} fw-bold">
-                    ${item.unidades_disponibles}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <span class="badge badge-stock bg-secondary bg-opacity-25 text-dark fw-bold">
-                    ${item.unidades_prestadas}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <span class="badge badge-stock bg-dark text-white fw-bold">
-                    ${item.total_inventario}
-                  </span>
+                  <button class="btn btn-sm btn-outline-primary fw-semibold" onclick="abrirModalEditar(${item.id})">
+                    <i class="bi bi-pencil-square"></i> Editar
+                  </button>
                 </td>
               </tr>
             `;
@@ -334,20 +457,80 @@
           html += "</tbody></table></div>";
           tablaContenedor.innerHTML = html;
         } catch (error) {
+          loadingSpinner.style.display = "none";
           console.error("Error:", error);
+          mensajeError.classList.remove("d-none");
         }
       }
 
+      // 2. CARGAR VISTA DE RESUMEN DE STOCK GLOBAL
+      async function cargarInventarioResumen() {
+        const tablaResumen = document.getElementById("tablaResumenContenedor");
+        if (!tablaResumen) return;
+
+        try {
+          const response = await fetch("/api/inventario");
+          const datos = await response.json();
+
+          if (!response.ok) throw new Error(datos.error);
+
+          if (!datos.inventario || datos.inventario.length === 0) {
+            tablaResumen.innerHTML =
+              '<p class="text-muted p-3">No hay métricas de stock registradas.</p>';
+            return;
+          }
+
+          let html = '<div class="table-responsive">';
+          html +=
+            '<table class="table table-striped table-hover table-bordered align-middle inventory-table">';
+          html += `
+            <thead class="table-dark">
+              <tr>
+                <th class="py-3 ps-3">Tipo de Artículo</th>
+                <th>Modelo</th>
+                <th class="text-center">Disponibles</th>
+                <th class="text-center">Prestados</th>
+                <th class="text-center">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+          `;
+
+          datos.inventario.forEach((item) => {
+            html += `
+              <tr>
+                <td class="ps-3 fw-bold text-dark">${item.tipo_articulo}</td>
+                <td class="text-secondary fw-medium">${item.modelo}</td>
+                <td class="text-center"><span class="badge badge-stock bg-success fw-bold">${item.unidades_disponibles}</span></td>
+                <td class="text-center"><span class="badge badge-stock bg-warning text-dark fw-bold">${item.unidades_prestadas}</span></td>
+                <td class="text-center"><span class="badge badge-stock bg-dark fw-bold">${item.total_inventario}</span></td>
+              </tr>
+            `;
+          });
+
+          html += "</tbody></table></div>";
+          tablaResumen.innerHTML = html;
+        } catch (error) {
+          console.error("Error cargando resumen:", error);
+          tablaResumen.innerHTML =
+            '<p class="text-danger p-3">Error al conectar con las métricas de stock.</p>';
+        }
+      }
+
+      // RETORNAR EL BADGE DE ESTADO CORRESPONDIENTE
       function getEstadoBadge(estado) {
         const badges = {
-          disponible: '<span class="badge bg-success">Disponible</span>',
-          prestado: '<span class="badge bg-warning text-dark">Prestado</span>',
+          disponible:
+            '<span class="badge bg-success fw-bold">Disponible</span>',
+          prestado:
+            '<span class="badge bg-warning text-dark fw-bold">Prestado</span>',
           mantenimiento:
-            '<span class="badge bg-danger">Mantenimiento</span>',
+            '<span class="badge bg-danger fw-bold">Mantenimiento</span>',
         };
         return badges[estado] || estado;
       }
 
+      // ABRIR EL MODAL CARGANDO LOS DATOS DEL ARTÍCULO
       function abrirModalEditar(articuloId) {
         const articulo = articulosData.find((a) => a.id === articuloId);
         if (!articulo) return;
@@ -361,6 +544,7 @@
         modalEditarArticulo.show();
       }
 
+      // ENVIAR ACTUALIZACIÓN DEL ARTÍCULO AL BACKEND (PUT)
       async function guardarArticulo() {
         const articuloId = document.getElementById("articuloId").value;
         const datos = {
@@ -392,7 +576,7 @@
           modalEditarArticulo.hide();
           mostrarMensajeExito("Artículo actualizado con éxito");
 
-          // Recargar datos
+          // Recargar ambas tablas
           await cargarInventarioDetallado();
           await cargarInventarioResumen();
         } catch (error) {
@@ -401,6 +585,7 @@
         }
       }
 
+      // ANIMAR EL BANNER DE ÉXITO DE ACCIONES
       function mostrarMensajeExito(mensaje) {
         const alertDiv = document.getElementById("mensajeExito");
         document.getElementById("textoExito").textContent = mensaje;
@@ -411,10 +596,13 @@
         }, 3000);
       }
 
+      // REGISTRAR UN NUEVO LOTE DE EQUIPOS (POST)
       async function agregarEquipo() {
         const tipo = document.getElementById("tipoAgregar").value.trim();
         const modelo = document.getElementById("modeloAgregar").value.trim();
-        const cantidad = parseInt(document.getElementById("cantidadAgregar").value);
+        const cantidad = parseInt(
+          document.getElementById("cantidadAgregar").value,
+        );
 
         const mensajeExito = document.getElementById("mensajeAgregarExito");
         const mensajeError = document.getElementById("mensajeAgregarError");
@@ -446,20 +634,20 @@
             throw new Error(resultado.error || "Error al agregar equipos");
           }
 
-          // Limpiar formulario
+          // Limpiar formulario de inserción
           document.getElementById("formAgregarEquipo").reset();
           document.getElementById("cantidadAgregar").value = "1";
 
-          // Mostrar mensaje de éxito
+          // Mostrar alerta de éxito interna
           document.getElementById("textoAgregarExito").textContent =
-            resultado.message || `Se agregaron ${cantidad} equipos exitosamente`;
+            resultado.message ||
+            `Se agregaron ${cantidad} equipos exitosamente`;
           mensajeExito.classList.remove("d-none");
 
-          // Recargar tablas
+          // Recargar flujos de datos sincrónicamente
           await cargarInventarioDetallado();
           await cargarInventarioResumen();
 
-          // Ocultar mensaje después de 3 segundos
           setTimeout(() => {
             mensajeExito.classList.add("d-none");
           }, 3000);

@@ -1,5 +1,5 @@
 -- =========================================================================
--- 1. ENUMS Y EXTENSIONES (Restricciones de catálogo cerrado sin tildes)
+-- 1. ENUMS (Catálogo cerrado sin tildes ni caracteres especiales)
 -- =========================================================================
 CREATE TYPE tipo_identificacion AS ENUM ('cedula', 'pasaporte');
 CREATE TYPE rol_usuario AS ENUM ('comun', 'administrador');
@@ -10,13 +10,13 @@ CREATE TYPE estado_prestamo AS ENUM ('activo', 'devuelto');
 -- 2. TABLAS PRINCIPALES
 -- =========================================================================
 
--- Tabla de Carreras
+-- Tabla de Carreras (Independiente)
 CREATE TABLE carreras (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE
 );
 
--- Tabla de Usuarios (Con Roles, Borrado Lógico e índice INSENSIBLE a mayúsculas)
+-- Tabla de Usuarios (Con Roles y Borrado Lógico)
 CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
     tipo_id tipo_identificacion NOT NULL,
@@ -25,6 +25,7 @@ CREATE TABLE usuarios (
     celular VARCHAR(15) NOT NULL,
     correo VARCHAR(100) NOT NULL,
     rol rol_usuario DEFAULT 'comun' NOT NULL,
+    carrera_id INT REFERENCES carreras(id) ON DELETE RESTRICT,
     activo BOOLEAN DEFAULT TRUE NOT NULL, -- Borrado lógico
     creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -32,33 +33,30 @@ CREATE TABLE usuarios (
 -- Índice único en minúsculas para el correo (Evita Duplicados Aparentes)
 CREATE UNIQUE INDEX idx_usuarios_correo_lower ON usuarios (LOWER(correo));
 
--- Tabla de Artículos (Con Identificación Física Única y Borrado Lógico)
+-- Tabla de Artículos (Inventario con Identificador Físico Único y Borrado Lógico)
 CREATE TABLE articulos (
     id SERIAL PRIMARY KEY,
-    codigo_activo VARCHAR(50) NOT NULL UNIQUE, -- Identificador físico (Código de barra / Serie)
+    codigo_activo VARCHAR(50) NOT NULL UNIQUE, -- Código de barra / Tag institucional
     modelo VARCHAR(100) NOT NULL,              
     tipo_articulo VARCHAR(50) NOT NULL,        
-    estado estado_articulo DEFAULT 'disponible' NOT NULL, -- Catálogo cerrado
+    estado estado_articulo DEFAULT 'disponible' NOT NULL, 
     activo BOOLEAN DEFAULT TRUE NOT NULL,      -- Borrado lógico
     creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
--- Tabla de Préstamos (Con doble referencia a usuarios, fechas comprometidas y reglas de coherencia)
+-- Tabla de Préstamos (Cabecera: Controla quién se lo lleva, quién lo entrega y estados)
 CREATE TABLE prestamos (
     id SERIAL PRIMARY KEY,
-    usuario_id INT NOT NULL,               -- El solicitante
-    administrador_id INT NOT NULL,         -- El admin que gestiona [Ambas partes]
-    articulo_id INT NOT NULL,              
+    usuario_id INT NOT NULL,               -- El alumno/solicitante
+    administrador_id INT NOT NULL,         -- El admin que gestiona la operación
     fecha_prestamo TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    fecha_devolucion_prevista TIMESTAMPTZ NOT NULL, -- Obligatoria para calcular retrasos
+    fecha_devolucion_prevista TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours') NOT NULL, -- Obligatoria para calcular retrasos
     fecha_devolucion_real TIMESTAMPTZ,              -- NULL si sigue activo
     observaciones TEXT,
-    estado_op estado_prestamo DEFAULT 'activo' NOT NULL, -- Catálogo cerrado
+    estado_op estado_prestamo DEFAULT 'activo' NOT NULL, 
     
-    -- Llaves Foráneas
     CONSTRAINT fk_usuario_prestamo FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
     CONSTRAINT fk_admin_prestamo FOREIGN KEY (administrador_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_articulo_prestamo FOREIGN KEY (articulo_id) REFERENCES articulos(id) ON DELETE RESTRICT,
     
     -- Regla de Coherencia: Si está devuelto, exige fecha real y viceversa
     CONSTRAINT chk_coherencia_devolucion CHECK (
@@ -67,21 +65,27 @@ CREATE TABLE prestamos (
     )
 );
 
+-- Tabla de Detalles de Préstamos (El Carrito de Compras en la BDD)
+CREATE TABLE detalles_prestamos (
+    id SERIAL PRIMARY KEY,
+    prestamo_id INT NOT NULL,
+    articulo_id INT NOT NULL,
+    CONSTRAINT fk_detalle_prestamo FOREIGN KEY (prestamo_id) REFERENCES prestamos(id) ON DELETE CASCADE,
+    CONSTRAINT fk_detalle_articulo FOREIGN KEY (articulo_id) REFERENCES articulos(id) ON DELETE RESTRICT
+);
+
 -- =========================================================================
--- 3. ÍNDICES (Optimización de Llaves Foráneas y Reportes por Período)
+-- 3. ÍNDICES DE OPTIMIZACIÓN (Garantizan consultas y reportes eficientes)
 -- =========================================================================
-CREATE INDEX idx_usuarios_carrera_id ON usuarios(carrera_id) WHERE carrera_id IS NOT NULL; -- (Asegúrate de mapear carrera_id si la usas en usuarios)
+CREATE INDEX idx_usuarios_carrera ON usuarios(carrera_id);
 CREATE INDEX idx_prestamos_usuario ON prestamos(usuario_id);
 CREATE INDEX idx_prestamos_admin ON prestamos(administrador_id);
-CREATE INDEX idx_prestamos_articulo ON prestamos(articulo_id);
+CREATE INDEX idx_detalles_prestamo ON detalles_prestamos(prestamo_id);
+CREATE INDEX idx_detalles_articulo ON detalles_prestamos(articulo_id);
 CREATE INDEX idx_prestamos_fecha_prestamo ON prestamos(fecha_prestamo);
 
--- Alteración rápida para amarrar la carrera a usuarios que faltaba en el script base:
-ALTER TABLE usuarios ADD COLUMN carrera_id INT REFERENCES carreras(id) ON DELETE RESTRICT;
-CREATE INDEX idx_usuarios_carrera ON usuarios(carrera_id);
-
 -- =========================================================================
--- 4. VISTAS (Datos derivables para evitar desincronización de Stock y Estados)
+-- 4. VISTAS AUTOMÁTICAS (Datos derivables en tiempo real para evitar desincronización)
 -- =========================================================================
 
 -- Vista de Disponibilidad Real de Stock agrupado por Modelo
@@ -96,13 +100,11 @@ FROM articulos
 WHERE activo = TRUE
 GROUP BY tipo_articulo, modelo;
 
--- Vista de Préstamos con cálculo dinámico de Atraso (Sin almacenar estado duplicado)
+-- Vista con cálculo dinámico de retrasos sin almacenar datos redundantes
 CREATE VIEW vista_prestamos_detallada AS
 SELECT 
     p.id AS prestamo_id,
     u.nombre_completo AS solicitante,
-    a.modelo AS equipo,
-    a.codigo_activo,
     p.fecha_prestamo,
     p.fecha_devolucion_prevista,
     p.fecha_devolucion_real,
@@ -112,13 +114,11 @@ SELECT
         ELSE FALSE
     END AS atrasado
 FROM prestamos p
-INNER JOIN usuarios u ON p.usuario_id = u.id
-INNER JOIN articulos a ON p.articulo_id = a.id;
+INNER JOIN usuarios u ON p.usuario_id = u.id;
 
 -- =========================================================================
--- 5. AUDITORÍA GENÉRICA (Tabla de Logs + Trigger en PL/pgSQL para Reportes)
+-- 5. AUDITORÍA MEDIANTE TRIGGERS (Reportes eficientes por periodo / mes)
 -- =========================================================================
-
 CREATE TABLE auditoria_prestamos (
     id SERIAL PRIMARY KEY,
     prestamo_id INT NOT NULL,
@@ -129,10 +129,8 @@ CREATE TABLE auditoria_prestamos (
     fecha_movimiento TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
--- Índice para optimizar reportes por rangos de fecha ("todos los movimientos del mes")
 CREATE INDEX idx_auditoria_fecha ON auditoria_prestamos(fecha_movimiento);
 
--- Función del Trigger
 CREATE OR REPLACE FUNCTION tg_auditar_prestamos()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -153,7 +151,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Vinculación del Trigger a la tabla prestamos
 CREATE TRIGGER trg_auditoria_prestamos
 AFTER INSERT OR UPDATE OR DELETE ON prestamos
 FOR EACH ROW
@@ -162,11 +159,15 @@ EXECUTE FUNCTION tg_auditar_prestamos();
 -- =========================================================================
 -- 6. DATA INICIAL DE PRUEBA
 -- =========================================================================
-INSERT INTO carreras (nombre) VALUES ('Desarrollo de Software'), ('Ciencia de Datos');
-INSERT INTO usuarios (tipo_id, numero_id, nombre_completo, celular, correo, rol, carrera_id) VALUES 
-('cedula', '1711111111', 'Admin Principal LTIC', '0999999991', 'admin.ltic@puce.edu.ec', 'administrador', NULL),
-('cedula', '1722222222', 'Juan Perez Alumno', '0999999992', 'juan.perez@puce.edu.ec', 'comun', 1);
+INSERT INTO carreras (nombre) 
+VALUES ('Desarrollo de Software'), ('Finanzas'), ('Administración de Empresas'), ('Arquitectura'), ('Ciencia de Datos'), ('Derecho');
 
-INSERT INTO articulos (codigo_activo, modelo, tipo_articulo) VALUES 
-('LP-001', 'ASUS TUF A15', 'Laptop'),
-('LP-002', 'Dell Latitude 3420', 'Laptop');
+-- Insertar Administrador indispensable para que funcione el selector de la cabecera
+INSERT INTO usuarios (tipo_id, numero_id, nombre_completo, celular, correo, rol, carrera_id) 
+VALUES ('cedula', '1711111111', 'Admin Principal LTIC', '0999999991', 'admin.ltic@puce.edu.ec', 'administrador', NULL);
+
+-- Insertar Artículos base al inventario
+INSERT INTO articulos (codigo_activo, modelo, tipo_articulo) 
+VALUES ('LP-001', 'ASUS TUF A15', 'Laptop'), ('LP-002', 'Dell Latitude 3420', 'Laptop'), ('CG-001', 'Cargador Universal 65W', 'Cargador');
+
+ALTER TABLE prestamos ALTER COLUMN fecha_devolucion_prevista SET DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours');

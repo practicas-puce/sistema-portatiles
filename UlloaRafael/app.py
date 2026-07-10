@@ -265,30 +265,100 @@ def add_usuario():
 @app.route('/api/usuarios/buscar', methods=['GET'])
 def buscar_usuario():
     numero_id = request.args.get('numero_id')
-    if not numero_id:
-        return jsonify({"error": "Debe proporcionar un número de identificación."}), 400
+    nombre = request.args.get('nombre')
+    es_admin_param = request.args.get('es_administrador')
+    
+    if not numero_id and not nombre:
+        return jsonify({"error": "Debe proporcionar un número de identificación o un nombre."}), 400
+
+    rol_filtro = None
+    if es_admin_param == 'true':
+        rol_filtro = 'administrador'
+    elif es_admin_param == 'false':
+        rol_filtro = 'comun'
 
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        query = """
-            SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, c.nombre AS carrera
-            FROM usuarios u
-            INNER JOIN carreras c ON u.carrera_id = c.id
-            WHERE u.numero_id = %s AND u.activo = TRUE;
-        """
-        cur.execute(query, (numero_id,))
-        usuario = cur.fetchone()
-        cur.close()
-
-        if usuario:
-            return jsonify(usuario), 200
+        
+        if numero_id:
+            if rol_filtro:
+                query = """
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, c.nombre AS carrera, u.rol
+                    FROM usuarios u
+                    LEFT JOIN carreras c ON u.carrera_id = c.id
+                    WHERE u.numero_id = %s AND u.rol = %s AND u.activo = TRUE;
+                """
+                cur.execute(query, (numero_id, rol_filtro))
+            else:
+                query = """
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, c.nombre AS carrera, u.rol
+                    FROM usuarios u
+                    LEFT JOIN carreras c ON u.carrera_id = c.id
+                    WHERE u.numero_id = %s AND u.activo = TRUE;
+                """
+                cur.execute(query, (numero_id,))
+            usuario = cur.fetchone()
+            cur.close()
+            if usuario:
+                return jsonify(usuario), 200
+            else:
+                return jsonify({"error": "No se encontró ningún usuario con esa identificación."}), 404
         else:
-            return jsonify({"error": "No se encontró ningún usuario con esa identificación."}), 404
+            if rol_filtro:
+                query = """
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, c.nombre AS carrera, u.rol
+                    FROM usuarios u
+                    LEFT JOIN carreras c ON u.carrera_id = c.id
+                    WHERE u.nombre_completo ILIKE %s AND u.rol = %s AND u.activo = TRUE
+                    ORDER BY u.nombre_completo;
+                """
+                cur.execute(query, (f"%{nombre}%", rol_filtro))
+            else:
+                query = """
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, c.nombre AS carrera, u.rol
+                    FROM usuarios u
+                    LEFT JOIN carreras c ON u.carrera_id = c.id
+                    WHERE u.nombre_completo ILIKE %s AND u.activo = TRUE
+                    ORDER BY u.nombre_completo;
+                """
+                cur.execute(query, (f"%{nombre}%",))
+            usuarios = cur.fetchall()
+            cur.close()
+            return jsonify(usuarios), 200
 
     except Exception as e:
         return jsonify({"error": f"Error interno en el servidor: {str(e)}"}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route('/api/usuarios/cambiar-rol', methods=['PUT'])
+def cambiar_rol():
+    datos = request.get_json()
+    usuario_id = datos.get('usuario_id')
+    es_administrador = datos.get('es_administrador')
+    
+    if usuario_id is None or es_administrador is None:
+        return jsonify({"error": "Faltan campos obligatorios: usuario_id y es_administrador."}), 400
+        
+    rol = 'administrador' if es_administrador else 'comun'
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE usuarios 
+            SET rol = %s 
+            WHERE id = %s AND activo = TRUE;
+        """, (rol, usuario_id))
+        conn.commit()
+        cur.close()
+        return jsonify({"message": f"Rol de usuario actualizado a {rol} con éxito."}), 200
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({"error": f"Error al actualizar el rol: {str(e)}"}), 500
     finally:
         if conn: conn.close()
 
@@ -301,16 +371,14 @@ def registrar_prestamo():
     # SOLUCIÓN: Extraemos observaciones para evitar el NameError
     observaciones = datos.get('observaciones', '').strip()
     
-    fecha_estimada = datos.get('fecha_devolucion_prevista') or datos.get('fecha_devolucion_estimada') or datos.get('fecha_estimada')
     articulos_id_list = datos.get('articulos') or datos.get('articulos_id')
 
     print("=== DATOS RECIBIDOS EN BACKEND ===")
     print("usuario_id:", usuario_id)
     print("administrador_id:", administrador_id)
-    print("fecha_estimada:", fecha_estimada)
     print("articulos:", articulos_id_list)
 
-    if not all([usuario_id, administrador_id, fecha_estimada]) or not articulos_id_list:
+    if not all([usuario_id, administrador_id]) or not articulos_id_list:
         return jsonify({"error": "Faltan campos obligatorios para el préstamo o el carrito está vacío."}), 400
 
     conn = None
@@ -319,10 +387,10 @@ def registrar_prestamo():
         cur = conn.cursor()
         
         query_text = """
-            INSERT INTO prestamos (usuario_id, administrador_id, fecha_devolucion_prevista, observaciones)
-            VALUES (%s, %s, %s, %s) RETURNING id;
+            INSERT INTO prestamos (usuario_id, administrador_id, observaciones)
+            VALUES (%s, %s, %s) RETURNING id;
         """
-        cur.execute(query_text, (usuario_id, administrador_id, fecha_estimada, observaciones))
+        cur.execute(query_text, (usuario_id, administrador_id, observaciones))
         nuevo_prestamo_id = cur.fetchone()[0]
 
         for art_id in articulos_id_list:

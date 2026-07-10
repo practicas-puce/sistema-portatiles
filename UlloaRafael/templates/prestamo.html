@@ -35,16 +35,14 @@
               </h2>
 
               <div class="mb-3">
-                <label for="administrador" class="form-label"
-                  >Encargado (Administrador)</label
-                >
+                <label for="administrador" class="form-label">Encargado</label>
                 <select
                   class="form-select bg-white text-black border-secondary"
                   id="administrador"
                   required
                 >
                   <option value="" selected disabled>
-                    Seleccione el administrador...
+                    Seleccione el encargado
                   </option>
                 </select>
               </div>
@@ -58,6 +56,7 @@
                     type="text"
                     class="form-control bg-white text-black border-secondary"
                     id="searchCedula"
+                    maxlength="10"
                     placeholder="17XXXXXXXX"
                   />
                   <button
@@ -79,18 +78,6 @@
               </div>
 
               <div class="mb-3">
-                <label for="fechaPrevista" class="form-label"
-                  >Fecha de Devolución Prevista</label
-                >
-                <input
-                  type="datetime-local"
-                  class="form-control bg-white text-black border-secondary"
-                  id="fechaPrevista"
-                  required
-                />
-              </div>
-
-              <div class="mb-3">
                 <label for="observaciones" class="form-label"
                   >Observaciones de Entrega</label
                 >
@@ -98,7 +85,7 @@
                   class="form-control bg-white text-black border-secondary"
                   id="observaciones"
                   rows="2"
-                  placeholder="Detalles de entrega..."
+                  placeholder="Detalles de entrega"
                 ></textarea>
               </div>
             </div>
@@ -122,7 +109,7 @@
                     id="articulo"
                   >
                     <option value="" selected disabled>
-                      Seleccione un equipo...
+                      Seleccione un equipo
                     </option>
                   </select>
                   <button
@@ -175,6 +162,7 @@
         const contenedorMensaje = document.getElementById(
           "mensajeNotificacion",
         );
+
 
         let solicitanteId = null;
         let carrito = [];
@@ -290,9 +278,6 @@
           const adminOk = selectAdmin.value ? true : false;
           const solicitanteOk = solicitanteId ? true : false;
           const carritoOk = carrito.length > 0;
-          const fechaOk = document.getElementById("fechaPrevista").value
-            ? true
-            : false;
 
           // Esto imprimirá en la consola F12 de tu navegador qué campo falta por completarse
           console.log("=== Estado de Validación ===");
@@ -314,26 +299,16 @@
             "-> Cantidad:",
             carrito.length,
           );
-          console.log(
-            "4. Fecha ingresada:",
-            fechaOk,
-            "-> Valor:",
-            document.getElementById("fechaPrevista").value,
-          );
 
           // FORZADO TEMPORAL: Cambia esto a false para obligar al botón a prenderse si quieres probar el envío directo
           btnConfirmar.disabled = !(
             solicitanteId &&
             carrito.length > 0 &&
-            selectAdmin.value &&
-            document.getElementById("fechaPrevista").value
+            selectAdmin.value
           );
         }
 
         selectAdmin.addEventListener("change", verificarFormularioValido);
-        document
-          .getElementById("fechaPrevista")
-          .addEventListener("input", verificarFormularioValido);
 
         // 5. Procesar Préstamo Completo
         // 5. Procesar Préstamo Completo
@@ -345,8 +320,6 @@
           const datos = {
             usuario_id: parseInt(solicitanteId),
             administrador_id: parseInt(selectAdmin.value),
-            fecha_devolucion_prevista:
-              document.getElementById("fechaPrevista").value,
             observaciones: document
               .getElementById("observaciones")
               .value.trim(),

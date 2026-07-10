@@ -15,6 +15,7 @@
     <style>
       .inventory-table {
         font-size: 0.95rem;
+        margin-bottom: 0;
       }
       .badge-stock {
         padding: 0.5rem 0.75rem;
@@ -65,7 +66,8 @@
         <div class="col">
           <h2 class="text-white mb-2">Gestión de Inventario</h2>
           <p class="text-secondary">
-            Vista detallada de equipos individuales - Haz clic en una fila para editar
+            Visualiza la disponibilidad actual de todos los equipos en
+            inventario
           </p>
         </div>
       </div>
@@ -113,99 +115,22 @@
         <p class="text-secondary mt-3">Cargando inventario...</p>
       </div>
 
-      <div class="tab-content">
-        <!-- TAB DETALLADO -->
-        <div class="tab-pane fade show active" id="contenedorDetallado">
-          <div id="tablaDetalladaContenedor"></div>
-        </div>
-
-        <!-- TAB RESUMEN -->
-        <div class="tab-pane fade" id="contenedorResumen">
-          <div id="tablaResumenContenedor"></div>
-        </div>
-
-        <!-- TAB AGREGAR EQUIPOS -->
-        <div class="tab-pane fade" id="contenedorAgregar">
-          <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-              <div class="card shadow-sm bg-dark border-secondary">
-                <div class="card-body p-4">
-                  <h3 class="card-title text-center mb-4 fs-5 text-light">
-                    Agregar Nuevos Equipos
-                  </h3>
-
-                  <form id="formAgregarEquipo">
-                    <div class="mb-3">
-                      <label for="tipoAgregar" class="form-label">
-                        <strong>Tipo de Artículo</strong>
-                        <small class="text-muted d-block">¿Qué tipo de equipo es? (Laptop, Desktop, Monitor, etc.)</small>
-                      </label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="tipoAgregar"
-                        placeholder="Ejemplo: Laptop"
-                        required
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label for="modeloAgregar" class="form-label">
-                        <strong>Modelo</strong>
-                        <small class="text-muted d-block">Marca y modelo del equipo</small>
-                      </label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="modeloAgregar"
-                        placeholder="Ejemplo: Lenovo ThinkPad E14"
-                        required
-                      />
-                    </div>
-
-                    <div class="mb-3">
-                      <label for="cantidadAgregar" class="form-label">
-                        <strong>Cantidad</strong>
-                        <small class="text-muted d-block">¿Cuántos equipos deseas agregar?</small>
-                      </label>
-                      <input
-                        type="number"
-                        class="form-control"
-                        id="cantidadAgregar"
-                        min="1"
-                        max="100"
-                        value="1"
-                        required
-                      />
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">
-                      <i class="bi bi-plus-circle"></i> Agregar Equipos
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              <div id="mensajeAgregarExito" class="alert alert-success d-none mt-3 alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle"></i> <span id="textoAgregarExito"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-
-              <div id="mensajeAgregarError" class="alert alert-danger d-none mt-3 alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-circle"></i> <span id="textoAgregarError"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div
+        class="card shadow-lg bg-white text-dark border-0 rounded-3 overflow-hidden"
+      >
+        <div id="tablaInventarioContenedor"></div>
       </div>
 
-      <div id="mensajeError" class="alert alert-danger d-none mt-4" role="alert">
-        <i class="bi bi-exclamation-circle"></i> No se pudo cargar el inventario.
-        Por favor, intenta nuevamente.
+      <div
+        id="mensajeError"
+        class="alert alert-danger d-none mt-3"
+        role="alert"
+      >
+        <i class="bi bi-exclamation-circle"></i> No se pudo cargar el
+        inventario. Por favor, intenta nuevamente.
       </div>
 
-      <div id="mensajeVacio" class="alert alert-info d-none mt-4" role="alert">
+      <div id="mensajeVacio" class="alert alert-info d-none mt-3" role="alert">
         <i class="bi bi-info-circle"></i> No hay artículos disponibles en el
         inventario.
       </div>
@@ -353,81 +278,18 @@
             return;
           }
 
-          articulosData = datos.articulos;
-
-          // Construir tabla
+          // Construir tabla clara de alto impacto
           let html = '<div class="table-responsive">';
           html +=
-            '<table class="table table-dark table-hover inventory-table">';
+            '<table class="table table-striped table-hover table-bordered align-middle inventory-table">';
           html += `
-            <thead class="table-secondary text-dark">
+            <thead class="table-success border-success">
               <tr>
-                <th>Código</th>
-                <th>Tipo</th>
-                <th>Modelo</th>
-                <th>Estado</th>
-                <th class="text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-          `;
-
-          datos.articulos.forEach((articulo) => {
-            const estadoBadge = getEstadoBadge(articulo.estado);
-            html += `
-              <tr class="editable-row" onclick="abrirModalEditar(${articulo.id})">
-                <td><code>${articulo.codigo_activo}</code></td>
-                <td><span class="badge bg-info text-dark">${articulo.tipo_articulo}</span></td>
-                <td class="text-secondary">${articulo.modelo}</td>
-                <td>${estadoBadge}</td>
-                <td class="text-center">
-                  <button 
-                    class="btn btn-sm btn-outline-primary"
-                    onclick="abrirModalEditar(${articulo.id}); event.stopPropagation();"
-                  >
-                    <i class="bi bi-pencil"></i> Editar
-                  </button>
-                </td>
-              </tr>
-            `;
-          });
-
-          html += "</tbody></table></div>";
-          tablaContenedor.innerHTML = html;
-        } catch (error) {
-          loadingSpinner.style.display = "none";
-          console.error("Error:", error);
-          mensajeError.classList.remove("d-none");
-        }
-      }
-
-      async function cargarInventarioResumen() {
-        const tablaContenedor = document.getElementById("tablaResumenContenedor");
-
-        try {
-          const response = await fetch("/api/inventario");
-          const datos = await response.json();
-
-          if (!response.ok) {
-            throw new Error(datos.error || "Error al cargar el inventario");
-          }
-
-          if (!datos.inventario || datos.inventario.length === 0) {
-            return;
-          }
-
-          // Construir tabla de resumen
-          let html = '<div class="table-responsive">';
-          html +=
-            '<table class="table table-dark table-hover inventory-table">';
-          html += `
-            <thead class="table-secondary text-dark">
-              <tr>
-                <th>Tipo de Artículo</th>
-                <th>Modelo</th>
-                <th class="text-center">Disponibles</th>
-                <th class="text-center">Prestados</th>
-                <th class="text-center">Total</th>
+                <th class="py-3">Tipo de Artículo</th>
+                <th class="py-3">Modelo</th>
+                <th class="text-center py-3">Disponibles</th>
+                <th class="text-center py-3">Prestados</th>
+                <th class="text-center py-3">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -439,26 +301,29 @@
               100
             ).toFixed(0);
 
-            let badgeDisponible = "bg-success";
-            if (porcentajeDisponible < 50) badgeDisponible = "bg-warning";
-            if (porcentajeDisponible < 20) badgeDisponible = "bg-danger";
+            // Badges limpios sobre celdas claras
+            let badgeDisponible = "bg-success text-white";
+            if (porcentajeDisponible < 50)
+              badgeDisponible = "bg-warning text-dark";
+            if (porcentajeDisponible < 20)
+              badgeDisponible = "bg-danger text-white";
 
             html += `
               <tr>
-                <td><span class="badge bg-info text-dark">${item.tipo_articulo}</span></td>
-                <td class="text-secondary">${item.modelo}</td>
+                <td class="ps-3"><span class="badge bg-primary text-white fw-semibold">${item.tipo_articulo}</span></td>
+                <td class="fw-medium text-dark">${item.modelo}</td>
                 <td class="text-center">
-                  <span class="badge badge-stock ${badgeDisponible}">
+                  <span class="badge badge-stock ${badgeDisponible} fw-bold">
                     ${item.unidades_disponibles}
                   </span>
                 </td>
                 <td class="text-center">
-                  <span class="badge badge-stock bg-warning text-dark">
+                  <span class="badge badge-stock bg-secondary bg-opacity-25 text-dark fw-bold">
                     ${item.unidades_prestadas}
                   </span>
                 </td>
                 <td class="text-center">
-                  <span class="badge badge-stock bg-secondary">
+                  <span class="badge badge-stock bg-dark text-white fw-bold">
                     ${item.total_inventario}
                   </span>
                 </td>

@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+import uuid
 
 load_dotenv()
 
@@ -17,6 +18,20 @@ def get_db_connection():
         port=os.environ.get("DB_PORT", "5432")
     )
     return conn
+
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT 1')
+        cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'ok', 'db': 'connected'}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'db_error': str(e)}), 500
 
 # =========================================================================
 # VISTAS HTML
@@ -79,6 +94,55 @@ def get_inventario():
     finally:
         if conn: conn.close()
 
+@app.route('/api/articulos/todos', methods=['GET'])
+def get_todos_articulos():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT id, codigo_activo, modelo, tipo_articulo, estado FROM articulos WHERE activo = TRUE ORDER BY tipo_articulo, modelo, codigo_activo;")
+        articulos = cur.fetchall()
+        cur.close()
+        return jsonify({"articulos": articulos}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route('/api/articulos/<int:articulo_id>', methods=['PUT'])
+def actualizar_articulo(articulo_id):
+    datos = request.get_json()
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        modelo = datos.get('modelo')
+        tipo_articulo = datos.get('tipo_articulo')
+        estado = datos.get('estado')
+        codigo_activo = datos.get('codigo_activo')
+        
+        if not all([modelo, tipo_articulo, estado, codigo_activo]):
+            return jsonify({"error": "Faltan campos requeridos."}), 400
+        
+        cur.execute("""
+            UPDATE articulos 
+            SET modelo = %s, tipo_articulo = %s, estado = %s, codigo_activo = %s
+            WHERE id = %s AND activo = TRUE;
+        """, (modelo, tipo_articulo, estado, codigo_activo, articulo_id))
+        
+        if cur.rowcount == 0:
+            return jsonify({"error": "Artículo no encontrado."}), 404
+        
+        conn.commit()
+        cur.close()
+        return jsonify({"message": "Artículo actualizado con éxito."}), 200
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 @app.route('/api/usuarios/lista', methods=['GET'])
 def get_usuarios_lista():
     conn = None
@@ -105,6 +169,69 @@ def get_articulos_disponibles():
         cur.close()
         return jsonify(articulos), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/api/articulos', methods=['POST'])
+def add_articulos():
+    datos = request.get_json()
+    tipo = datos.get('tipo_articulo')
+    modelo = datos.get('modelo')
+    cantidad = int(datos.get('cantidad', 0))
+
+    if not tipo or not modelo or cantidad <= 0:
+        return jsonify({"error": "Debe proporcionar tipo_articulo, modelo y cantidad válida."}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        inserted = 0
+        for i in range(cantidad):
+            # Generar un código activo único con UUID para evitar dependencias de secuencia
+            codigo = f"{modelo}-{uuid.uuid4().hex[:8]}"
+            cur.execute(
+                "INSERT INTO articulos (codigo_activo, modelo, tipo_articulo, estado, activo) VALUES (%s, %s, %s, %s, TRUE);",
+                (codigo, modelo, tipo, 'disponible')
+            )
+            inserted += 1
+        conn.commit()
+        cur.close()
+        return jsonify({"message": f"Se agregaron {inserted} artículos."}), 201
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/api/articulos', methods=['DELETE'])
+def delete_articulos():
+    datos = request.get_json()
+    tipo = datos.get('tipo_articulo')
+    modelo = datos.get('modelo')
+    cantidad = int(datos.get('cantidad', 0))
+
+    if not tipo or not modelo or cantidad <= 0:
+        return jsonify({"error": "Debe proporcionar tipo_articulo, modelo y cantidad válida."}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Eliminar hasta `cantidad` artículos disponibles del modelo/tipo
+        cur.execute(
+            "DELETE FROM articulos WHERE id IN (SELECT id FROM articulos WHERE tipo_articulo = %s AND modelo = %s AND estado = 'disponible' AND activo = TRUE LIMIT %s) RETURNING id;",
+            (tipo, modelo, cantidad)
+        )
+        deleted = len(cur.fetchall())
+        conn.commit()
+        cur.close()
+        return jsonify({"message": f"Se eliminaron {deleted} artículos."}), 200
+    except Exception as e:
+        if conn: conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: conn.close()
@@ -271,4 +398,5 @@ def finalizar_prestamo():
         if conn: conn.close()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print('Iniciando servidor Flask en 127.0.0.1:5000')
+    app.run(debug=True, host='127.0.0.1', port=5000)

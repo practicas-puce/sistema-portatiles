@@ -77,7 +77,8 @@
     <header class="navbar navbar-expand-lg navbar-dark bg-black shadow-sm">
       <div class="container-fluid">
         <span class="navbar-brand mb-0 h1">
-          <i class="bi bi-box-arrow-in-down me-2"></i>LTIC Préstamos - Devoluciones
+          <i class="bi bi-box-arrow-in-down me-2"></i>LTIC Préstamos -
+          Devoluciones
         </span>
         <a href="/" class="btn btn-sm btn-light text-dark fw-bold shadow-sm">
           <i class="bi bi-house-door-fill me-1"></i> Volver al Inicio
@@ -95,8 +96,8 @@
               <i class="bi bi-box-arrow-in-down me-2"></i>Devolución de Equipos
             </h1>
             <p class="text-secondary mb-0">
-              Lista de préstamos activos pendientes. Utilice el botón de cada
-              fila para registrar la devolución.
+              Lista de préstamos activos. Seleccione una fila para registrar la
+              devolución.
             </p>
           </div>
           <form id="filtroForm" class="d-flex gap-2" role="search">
@@ -111,7 +112,7 @@
               autocomplete="off"
             />
             <button class="btn btn-sm btn-outline-light" type="submit">
-              <i class="bi bi-search"></i> Buscar
+              <i class="bi bi-search"></i>
             </button>
             <button
               id="btnLimpiar"
@@ -435,7 +436,7 @@
                   <span class="badge text-bg-secondary article-badge">
                     ${escaparHtml(articulo.tipo)}: ${escaparHtml(articulo.modelo)}
                   </span>
-                `
+                `,
               )
               .join("");
 
@@ -495,8 +496,6 @@
             contadorPrestamos.textContent = "0 préstamos";
           }
         };
-
-
 
         const actualizarBotonDevolucion = () => {
           const checkboxes = Array.from(

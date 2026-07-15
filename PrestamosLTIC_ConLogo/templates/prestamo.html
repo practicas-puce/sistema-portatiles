@@ -55,9 +55,10 @@
   <body>
     <header class="navbar navbar-expand-lg navbar-dark bg-black shadow-sm">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1"
-          >LTIC Préstamos - Salida de Equipos</span
-        >
+        <a class="navbar-brand mb-0 h1 d-flex align-items-center" href="/">
+          <img src="{{ url_for('static', filename='LogoLTICS.jpg.jpeg') }}" alt="Logo" height="30" class="d-inline-block align-middle me-2 rounded" />
+          LTIC Préstamos - Salida de Equipos
+        </a>
         <div class="d-flex align-items-center gap-3 ms-auto">
           <div class="form-check form-switch" style="cursor: pointer">
             <input

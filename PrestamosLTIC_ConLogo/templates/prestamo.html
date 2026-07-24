@@ -51,7 +51,8 @@
         }
       });
     </script>
-  </head>
+      <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='LogoLTICS.jpg.jpeg') }}">
+</head>
   <body>
     <header class="navbar navbar-expand-lg navbar-dark bg-black shadow-sm">
       <div class="container-fluid">
@@ -233,14 +234,58 @@
           console.error("Error al iniciar la interfaz:", err);
         }
 
+        let todosArticulosDisponibles = [];
+
         async function cargarArticulosDisponibles() {
+          try {
+            const resArticulos = await fetch("/api/articulos/disponibles");
+            todosArticulosDisponibles = await resArticulos.json();
+            actualizarSelectorArticulos();
+          } catch (err) {
+            console.error("Error al cargar artículos:", err);
+          }
+        }
+
+        function actualizarSelectorArticulos() {
           selectArticulo.innerHTML =
             '<option value="" selected disabled>Seleccione un equipo...</option>';
-          const resArticulos = await fetch("/api/articulos/disponibles");
-          const articulos = await resArticulos.json();
-          articulos.forEach((a) => {
-            selectArticulo.innerHTML += `<option value="${a.id}" data-texto="${a.tipo_articulo} - ${a.modelo} [${a.codigo_activo}]">${a.tipo_articulo} - ${a.modelo} [${a.codigo_activo}]</option>`;
+          
+          // Filtrar artículos que ya están en el carrito
+          const articulosLibres = todosArticulosDisponibles.filter(
+            (a) => !carrito.some((item) => item.id === a.id)
+          );
+
+          // Laptops se presentan de manera individual con su código de activo
+          const laptops = articulosLibres.filter(
+            (a) => a.tipo_articulo && a.tipo_articulo.toLowerCase() === "laptop"
+          );
+          laptops.forEach((a) => {
+            const texto = `Laptop - ${a.modelo} [${a.codigo_activo}]`;
+            selectArticulo.innerHTML += `<option value="${a.id}" data-texto="${texto}">${texto}</option>`;
           });
+
+          // Otros artículos se agrupan por tipo y modelo
+          const otros = articulosLibres.filter(
+            (a) => !a.tipo_articulo || a.tipo_articulo.toLowerCase() !== "laptop"
+          );
+
+          const grupos = {};
+          otros.forEach((a) => {
+            const key = `${a.tipo_articulo || "Otros"}:${a.modelo || "Genérico"}`;
+            if (!grupos[key]) {
+              grupos[key] = [];
+            }
+            grupos[key].push(a);
+          });
+
+          for (const key in grupos) {
+            const listado = grupos[key];
+            const primerArticulo = listado[0];
+            const [tipo, modelo] = key.split(":");
+            const texto = `${tipo} - ${modelo}`;
+            const label = `${texto} (${listado.length} unidades disponibles)`;
+            selectArticulo.innerHTML += `<option value="${primerArticulo.id}" data-texto="${texto}">${label}</option>`;
+          }
         }
 
         // 2. Lógica del Buscador del Solicitante
@@ -290,7 +335,7 @@
             const id = selectArticulo.value;
             if (!id) return;
 
-            if (carrito.some((item) => item.id === id)) {
+            if (carrito.some((item) => item.id === parseInt(id))) {
               alert("Este artículo ya está en el carrito.");
               return;
             }
@@ -300,8 +345,7 @@
             const texto = opcionSeleccionada.getAttribute("data-texto");
 
             carrito.push({ id: parseInt(id), texto: texto });
-            opcionSeleccionada.remove();
-
+            actualizarSelectorArticulos();
             renderizarCarrito();
           });
 
@@ -309,7 +353,7 @@
         window.removerDelCarrito = (id) => {
           carrito = carrito.filter((item) => item.id !== id);
           renderizarCarrito();
-          cargarArticulosDisponibles();
+          actualizarSelectorArticulos();
         };
 
         function renderizarCarrito() {

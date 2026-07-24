@@ -285,7 +285,7 @@ def get_usuarios_lista():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, nombre_completo, numero_id, rol FROM usuarios WHERE activo = TRUE ORDER BY nombre_completo;")
+        cur.execute("SELECT id, nombre_completo, numero_id, rol FROM usuarios WHERE numero_id != 'administrador' AND activo = TRUE ORDER BY nombre_completo;")
         usuarios = cur.fetchall()
         cur.close()
         return jsonify(usuarios), 200
@@ -300,7 +300,7 @@ def get_responsables():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, nombre_completo, numero_id FROM usuarios WHERE rol = 'administrador' AND activo = TRUE ORDER BY nombre_completo;")
+        cur.execute("SELECT id, nombre_completo, numero_id FROM usuarios WHERE rol = 'administrador' AND numero_id != 'administrador' AND activo = TRUE ORDER BY nombre_completo;")
         responsables = cur.fetchall()
         cur.close()
         return jsonify(responsables), 200
@@ -481,9 +481,11 @@ def actualizar_usuario(usuario_id):
     correo = datos.get('correo')
     carrera_id = datos.get('carrera_id')
     rol = datos.get('rol')
+    numero_id = datos.get('numero_id')
+    tipo_id = datos.get('tipo_id')
 
-    if not nombre or not celular or not correo:
-        return jsonify({"error": "Nombre, celular y correo son campos obligatorios."}), 400
+    if not nombre or not celular or not correo or not numero_id or not tipo_id:
+        return jsonify({"error": "Nombre, identificación, tipo de identificación, celular y correo son campos obligatorios."}), 400
 
     conn = None
     try:
@@ -494,15 +496,15 @@ def actualizar_usuario(usuario_id):
         if rol:
             cur.execute("""
                 UPDATE usuarios 
-                SET nombre_completo = %s, celular = %s, correo = %s, carrera_id = %s, rol = %s
+                SET nombre_completo = %s, celular = %s, correo = %s, carrera_id = %s, rol = %s, numero_id = %s, tipo_id = %s
                 WHERE id = %s AND activo = TRUE;
-            """, (nombre, celular, correo, carrera_id or None, rol, usuario_id))
+            """, (nombre, celular, correo, carrera_id or None, rol, numero_id, tipo_id, usuario_id))
         else:
             cur.execute("""
                 UPDATE usuarios 
-                SET nombre_completo = %s, celular = %s, correo = %s, carrera_id = %s
+                SET nombre_completo = %s, celular = %s, correo = %s, carrera_id = %s, numero_id = %s, tipo_id = %s
                 WHERE id = %s AND activo = TRUE;
-            """, (nombre, celular, correo, carrera_id or None, usuario_id))
+            """, (nombre, celular, correo, carrera_id or None, numero_id, tipo_id, usuario_id))
 
         if cur.rowcount == 0:
             return jsonify({"error": "Usuario no encontrado o inactivo."}), 404
@@ -548,11 +550,31 @@ def delete_usuario(usuario_id):
         if conn: conn.close()
 
 
+@app.route('/api/usuarios/<int:usuario_id>/activar', methods=['PUT'])
+def activar_usuario(usuario_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE usuarios SET activo = TRUE WHERE id = %s;", (usuario_id,))
+        if cur.rowcount == 0:
+            return jsonify({"error": "Usuario no encontrado."}), 404
+        conn.commit()
+        cur.close()
+        return jsonify({"message": "Usuario reactivado con éxito."}), 200
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
 @app.route('/api/usuarios/buscar', methods=['GET'])
 def buscar_usuario():
     numero_id = request.args.get('numero_id')
     nombre = request.args.get('nombre')
     es_admin_param = request.args.get('es_administrador')
+    incluir_inactivos = request.args.get('incluir_inactivos', 'false') == 'true'
     
     if not numero_id and not nombre:
         return jsonify({"error": "Debe proporcionar un número de identificación o un nombre."}), 400
@@ -568,21 +590,23 @@ def buscar_usuario():
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
+        activo_sql = "" if incluir_inactivos else "AND u.activo = TRUE"
+        
         if numero_id:
             if rol_filtro:
-                query = """
-                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol
+                query = f"""
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol, u.activo
                     FROM usuarios u
                     LEFT JOIN carreras c ON u.carrera_id = c.id
-                    WHERE u.numero_id = %s AND u.rol = %s AND u.activo = TRUE;
+                    WHERE u.numero_id = %s AND u.rol = %s {activo_sql};
                 """
                 cur.execute(query, (numero_id, rol_filtro))
             else:
-                query = """
-                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol
+                query = f"""
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol, u.activo
                     FROM usuarios u
                     LEFT JOIN carreras c ON u.carrera_id = c.id
-                    WHERE u.numero_id = %s AND u.activo = TRUE;
+                    WHERE u.numero_id = %s {activo_sql};
                 """
                 cur.execute(query, (numero_id,))
             usuario = cur.fetchone()
@@ -598,20 +622,20 @@ def buscar_usuario():
                 return jsonify({"error": "No se encontró ningún usuario con esa identificación."}), 404
         else:
             if rol_filtro:
-                query = """
-                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol
+                query = f"""
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol, u.activo
                     FROM usuarios u
                     LEFT JOIN carreras c ON u.carrera_id = c.id
-                    WHERE u.nombre_completo ILIKE %s AND u.rol = %s AND u.activo = TRUE
+                    WHERE TRANSLATE(LOWER(u.nombre_completo), 'áéíóúü', 'aeiouu') LIKE TRANSLATE(LOWER(%s), 'áéíóúü', 'aeiouu') AND u.rol = %s {activo_sql}
                     ORDER BY u.nombre_completo;
                 """
                 cur.execute(query, (f"%{nombre}%", rol_filtro))
             else:
-                query = """
-                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol
+                query = f"""
+                    SELECT u.id, u.tipo_id, u.numero_id, u.nombre_completo, u.celular, u.correo, u.carrera_id, c.nombre AS carrera, u.rol, u.activo
                     FROM usuarios u
                     LEFT JOIN carreras c ON u.carrera_id = c.id
-                    WHERE u.nombre_completo ILIKE %s AND u.activo = TRUE
+                    WHERE TRANSLATE(LOWER(u.nombre_completo), 'áéíóúü', 'aeiouu') LIKE TRANSLATE(LOWER(%s), 'áéíóúü', 'aeiouu') {activo_sql}
                     ORDER BY u.nombre_completo;
                 """
                 cur.execute(query, (f"%{nombre}%",))
@@ -679,6 +703,7 @@ def registrar_prestamo():
     conn = None
     try:
         conn = get_db_connection()
+        cur = conn.cursor()
         # Validar si el estudiante ya tiene un préstamo activo
         cur.execute("SELECT COUNT(*) FROM prestamos WHERE usuario_id = %s AND estado_op = 'activo';", (usuario_id,))
         if cur.fetchone()[0] > 0:
@@ -726,7 +751,7 @@ def get_prestamos_activos():
                 INNER JOIN detalles_prestamos dp ON p.id = dp.prestamo_id
                 INNER JOIN articulos a ON dp.articulo_id = a.id
                 LEFT JOIN usuarios adm ON p.administrador_id = adm.id
-                WHERE (u.numero_id = %s OR u.nombre_completo ILIKE %s) 
+                WHERE (u.numero_id = %s OR TRANSLATE(LOWER(u.nombre_completo), 'áéíóúü', 'aeiouu') LIKE TRANSLATE(LOWER(%s), 'áéíóúü', 'aeiouu')) 
                   AND p.estado_op = 'activo' AND a.estado = 'prestado'
                 ORDER BY p.fecha_prestamo DESC;
             """

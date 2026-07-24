@@ -51,12 +51,18 @@
         }
       });
     </script>
-  </head>
+      <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='LogoLTICS.jpg.jpeg') }}">
+</head>
   <body>
     <header class="navbar navbar-expand-lg navbar-dark bg-black shadow-sm">
       <div class="container-fluid">
         <a class="navbar-brand mb-0 h1 d-flex align-items-center" href="/">
-          <img src="{{ url_for('static', filename='LogoLTICS.jpg.jpeg') }}" alt="Logo" height="30" class="d-inline-block align-middle me-2 rounded" />
+          <img
+            src="{{ url_for('static', filename='LogoLTICS.jpg.jpeg') }}"
+            alt="Logo"
+            height="30"
+            class="d-inline-block align-middle me-2 rounded"
+          />
           LTIC Préstamos - Consulta de Usuarios
         </a>
         <div class="d-flex align-items-center gap-3 ms-auto">
@@ -110,6 +116,20 @@
                     id="lblTerminoBusqueda"
                     >Número de Cédula o Pasaporte</label
                   >
+                  <div class="form-check mb-3">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="incluirInactivos"
+                    />
+                    <label
+                      class="form-check-label small text-secondary"
+                      for="incluirInactivos"
+                    >
+                      Incluir usuarios dados de baja
+                    </label>
+                  </div>
+
                   <div class="input-group">
                     <input
                       type="text"
@@ -158,6 +178,9 @@
             <div class="card-body p-4">
               <div id="mensajeDetalleNotificacion" class="mb-3"></div>
               <p>
+                <div id="alertaInactivo" class="alert alert-danger d-none py-2 mb-3 small fw-bold">
+                  ⚠️ Este usuario se encuentra dado de baja (Inactivo)
+                </div>  
                 <strong>Tipo Documento:</strong>
                 <span id="resTipo" class="text-capitalize"></span>
               </p>
@@ -201,10 +224,19 @@
                 </button>
                 <button
                   type="button"
+                  id="btnDarBajaUsuario"
                   class="btn btn-outline-danger btn-sm fw-bold"
                   onclick="eliminarUsuarioLogico()"
                 >
                   <i class="bi bi-trash-fill"></i> Dar de baja
+                </button>
+                <button
+                  type="button"
+                  id="btnActivarUsuario"
+                  class="btn btn-outline-success btn-sm fw-bold d-none"
+                  onclick="activarUsuario()"
+                >
+                  <i class="bi bi-person-check-fill"></i> Volver a activar
                 </button>
               </div>
             </div>
@@ -240,6 +272,28 @@
                 id="alertEditarUsuario"
                 class="alert alert-danger d-none"
               ></div>
+
+              <div class="mb-3">
+                <label for="editTipoId" class="form-label fw-bold"
+                  >Tipo Identificación:</label
+                >
+                <select class="form-select" id="editTipoId" required>
+                  <option value="cedula">Cédula</option>
+                  <option value="pasaporte">Pasaporte</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="editIdentificacion" class="form-label fw-bold"
+                  >Número de Identificación:</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editIdentificacion"
+                  required
+                />
+              </div>
 
               <div class="mb-3">
                 <label for="editNombre" class="form-label fw-bold"
@@ -418,6 +472,8 @@
           if (idx === -1) return;
           const user = usuariosEncontrados[idx];
 
+          document.getElementById("editTipoId").value = user.tipo_id || "cedula";
+          document.getElementById("editIdentificacion").value = user.numero_id || "";
           document.getElementById("editNombre").value = user.nombre_completo;
           document.getElementById("editCelular").value = user.celular;
           document.getElementById("editCorreo").value = user.correo;
@@ -450,12 +506,16 @@
             if (idx === -1) return;
             const user = usuariosEncontrados[idx];
 
+            const tipo_id = document.getElementById("editTipoId").value;
+            const numero_id = document.getElementById("editIdentificacion").value.trim();
             const nombre = document.getElementById("editNombre").value.trim();
             const celular = document.getElementById("editCelular").value.trim();
             const correo = document.getElementById("editCorreo").value.trim();
             const carrera_id = document.getElementById("editCarrera").value;
 
             const payload = {
+              tipo_id: tipo_id,
+              numero_id: numero_id,
               nombre_completo: nombre,
               celular: celular,
               correo: correo,
@@ -478,6 +538,8 @@
               }
 
               // Actualizar caché
+              user.tipo_id = tipo_id;
+              user.numero_id = numero_id;
               user.nombre_completo = nombre;
               user.celular = celular;
               user.correo = correo;
@@ -572,30 +634,34 @@
         window.mostrarDetallesUsuario = (index) => {
           const usuario = usuariosEncontrados[index];
           if (!usuario) return;
-
           usuarioDetalleId = usuario.id;
           mensajeRolUpdate.innerHTML = "";
-          const detailNotification = document.getElementById(
-            "mensajeDetalleNotificacion",
-          );
+          const detailNotification = document.getElementById("mensajeDetalleNotificacion");
           if (detailNotification) detailNotification.innerHTML = "";
-
-          document.getElementById("resNombre").textContent =
-            usuario.nombre_completo;
+          document.getElementById("resNombre").textContent = usuario.nombre_completo;
           document.getElementById("resTipo").textContent = usuario.tipo_id;
           document.getElementById("resCedula").textContent = usuario.numero_id;
           document.getElementById("resCelular").textContent = usuario.celular;
           document.getElementById("resCorreo").textContent = usuario.correo;
-          document.getElementById("resCarrera").textContent =
-            usuario.carrera || "Ninguna (Administrador)";
-
-          // Set switch state based on role
-          switchRolUsuario.checked = usuario.rol === "administrador";
-          lblSwitchRolUsuario.textContent =
-            usuario.rol === "administrador"
-              ? "Rol: Ayudante"
-              : "Rol: Estudiante";
-
+          document.getElementById("resCarrera").textContent = usuario.carrera || "Ninguna (Administrador)";
+          // Controlar alerta e interactividad según si está activo o no
+          const alertaInactivo = document.getElementById("alertaInactivo");
+          const btnActivar = document.getElementById("btnActivarUsuario");
+          const btnDarBaja = document.getElementById("btnDarBajaUsuario"); // Asegúrate de tener este ID en tu HTML
+          const switchRol = document.getElementById("switchRolUsuario");
+          if (usuario.activo === false) {
+            alertaInactivo.classList.remove("d-none");
+            btnActivar.classList.remove("d-none");
+            if (btnDarBaja) btnDarBaja.classList.add("d-none");
+            switchRol.disabled = true; // No permitir cambiar rol de inactivos
+          } else {
+            alertaInactivo.classList.add("d-none");
+            btnActivar.classList.add("d-none");
+            if (btnDarBaja) btnDarBaja.classList.remove("d-none");
+            switchRol.disabled = false;
+          }
+          switchRol.checked = usuario.rol === "administrador";
+          lblSwitchRolUsuario.textContent = usuario.rol === "administrador" ? "Rol: Encargado" : "Rol: Estudiante";
           resultadoCard.classList.remove("d-none");
         };
 
@@ -604,6 +670,7 @@
 
           const termino = inputTermino.value.trim();
           const tipo = tipoBusqueda.value;
+          const incluirInactivos = document.getElementById("incluirInactivos").checked;
 
           contenedorMensaje.innerHTML = "";
           resultadoCard.classList.add("d-none");
@@ -614,9 +681,9 @@
           try {
             let url = "";
             if (tipo === "identificacion") {
-              url = `/api/usuarios/buscar?numero_id=${encodeURIComponent(termino)}`;
+              url = `/api/usuarios/buscar?numero_id=${encodeURIComponent(termino)}&incluir_inactivos=${incluirInactivos}`;
             } else {
-              url = `/api/usuarios/buscar?nombre=${encodeURIComponent(termino)}`;
+              url = `/api/usuarios/buscar?nombre=${encodeURIComponent(termino)}&incluir_inactivos=${incluirInactivos}`;
             }
 
             const response = await fetch(url);
@@ -674,6 +741,47 @@
             `;
           }
         });
+
+        window.activarUsuario = async () => {
+          if (usuarioDetalleId === null) return;
+          
+          if (!confirm("¿Estás seguro de que deseas volver a activar a este usuario?")) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`/api/usuarios/${usuarioDetalleId}/activar`, {
+              method: "PUT"
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || "Error al activar el usuario.");
+            }
+
+            // Actualizar caché local
+            const idx = usuariosEncontrados.findIndex(u => u.id === usuarioDetalleId);
+            if (idx !== -1) {
+              usuariosEncontrados[idx].activo = true;
+            }
+
+            // Refrescar tarjeta
+            mostrarDetallesUsuario(idx);
+
+            // Mostrar notificación exitosa
+            const detailNotification = document.getElementById("mensajeDetalleNotificacion");
+            if (detailNotification) {
+              detailNotification.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                  ✅ Usuario reactivado con éxito en el sistema.
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              `;
+            }
+          } catch (error) {
+            alert(error.message);
+          }
+        };
       });
     </script>
   </body>
